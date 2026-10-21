@@ -327,3 +327,11 @@ descobrir. Ler antes de debugar do zero.
 - **Valores falados:** o Whisper escreve "cento e cinquenta reais" como "R$ 150,00" em dois tokens. Antes de gerar a
   legenda, junte em "R$150" e troque "Grock/Groq" por "Grok" num `palavras_legenda.json` separado.
 - **`aplicar-estilo-template.mjs` falhava ao reaplicar** por a fonte do sistema vir somente leitura; o script agora apaga o destino antes de copiar.
+- **Voz grave e pausada após a troca (21/10/2026):** a troca de voz mantém o ritmo e a gravidade da voz sintética do Flow
+  (o clone tinha só 2 amostras). Saídas: 1,2x com `rubberband` +1 a +3 semitons, ou `gerar-voz-tts.mjs` (fala por texto).
+- **Fala por texto engole artigos curtos** ("o" em "sendo o humano") e pode trocar palavras ("com direito a" virou
+  "empreguei pra"). Dois transcritores concordando é a prova; um só pode errar. Frase só passa se a conferência feita
+  DEPOIS do encaixe (`atempo`) ainda ouvir o texto certo, porque esticar o áudio pode apagar a palavra.
+- **Variante que acerta pode trazer palavra a mais** ("..., tá?"): cortar no fim da última palavra do roteiro antes de usar.
+- **Regex em string de template perde a barra invertida** ao gerar scripts por substituição de texto (`/s+/` virou `/s+/` e
+  quebrou a comparação). Sempre rodar um teste mínimo do conferidor com um texto conhecido.

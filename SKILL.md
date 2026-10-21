@@ -308,9 +308,14 @@ em WAV) e siga para o Passo 6.
   repetidas). Se a retranscrição achar algum que escapou do Passo 4b, ache o ponto
   com `silencedetect` + transcrição de pedaços curtos, corte vídeo e áudio juntos e
   refaça a troca.
-- Alternativa testada e preterida: gerar a fala do zero com `eleven_v4` (texto para
-  voz) e encaixar frase por frase. Soa natural, mas a boca só bate no começo e no
-  fim de cada frase.
+- **Alternativa quando a troca de voz soa grave/pausada (`scripts/gerar-voz-tts.mjs`):** gera a fala do
+  zero com `eleven_v4` (texto para voz, sua voz clonada), frase por frase, e encaixa cada frase na janela
+  de tempo do avatar (`frases.json` com `inicio`/`fim` tirados de `palavras.json`). O ritmo e o timbre vêm
+  do clone, não do Flow. A boca só bate no começo e no fim de cada frase. O script **confere cada frase por
+  transcrição** e regera até 3 vezes; ainda assim confira o áudio final com 2 transcritores e, se algum
+  artigo curto sumir ("sendo o humano" virou "sendo humano"), refaça só aquela frase.
+- Ajuste fino sem gastar crédito: `rubberband=tempo=1.2:pitch=1.0595:formant=shifted` (+1 semitom) no áudio
+  final, no lugar de `atempo`, deixa a voz menos grave mantendo o ritmo.
 
 ## Passo 8: Montagem final (velocidade em `perfil.velocidadeFinal`, padrão 1,1x)
 

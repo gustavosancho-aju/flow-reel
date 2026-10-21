@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "{{FONTE_TITULO}}"; src: url("fonts/{{FONTE_TITULO_ARQUIVO}}"); font-weight: 900; }
+      @font-face { font-family: "{{FONTE_CORPO}}"; src: url("fonts/{{FONTE_CORPO_ARQUIVO}}"); font-weight: 700; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: {{FUNDO}}; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: {{FUNDO}};
+        font-family: "{{FONTE_CORPO}}", Arial, sans-serif; color: #fff; }
+
+      #backdrop { position: absolute; inset: 0;
+        background:
+          radial-gradient(ellipse 80% 30% at 50% 14%, rgba({{DESTAQUE_RGB}},0.16), rgba({{DESTAQUE_RGB}},0) 70%),
+          radial-gradient(ellipse 90% 40% at 50% 100%, rgba({{DESTAQUE_RGB}},0.10), rgba({{DESTAQUE_RGB}},0) 70%),
+          {{FUNDO}}; }
+      #grid { position: absolute; inset: 0; opacity: 0.20;
+        background-image: linear-gradient(rgba({{DESTAQUE_RGB}},0.35) 1px, transparent 1px),
+          linear-gradient(90deg, rgba({{DESTAQUE_RGB}},0.35) 1px, transparent 1px);
+        background-size: 90px 90px;
+        -webkit-mask-image: linear-gradient(#000 0%, rgba(0,0,0,0) 62%);
+        mask-image: linear-gradient(#000 0%, rgba(0,0,0,0) 62%); }
+
+      #panel { position: absolute; left: 40px; top: 110px; width: 1000px; height: 780px; }
+      .scn { position: absolute; inset: 0; opacity: 0; }
+      .kicker { position: absolute; left: 0; top: 0; width: 1000px; text-align: center; letter-spacing: 6px;
+        font-family: "{{FONTE_TITULO}}", sans-serif; font-weight: 900; font-size: 34px; color: {{DESTAQUE}}; }
+
+      .big { position: absolute; border-radius: 28px; padding: 34px 38px; background: linear-gradient(160deg, rgba(20,28,24,0.97), rgba(10,14,12,0.97));
+        border: 3px solid rgba({{DESTAQUE_RGB}},0.85); box-shadow: 0 0 40px rgba({{DESTAQUE_RGB}},0.26), 0 18px 40px rgba(0,0,0,0.5); }
+      .big.red { border-color: {{ALERTA}}; box-shadow: 0 0 40px rgba({{ALERTA_RGB}},0.3), 0 18px 40px rgba(0,0,0,0.5); }
+      .big.amb { border-color: {{ATENCAO}}; box-shadow: 0 0 40px rgba({{ATENCAO_RGB}},0.3), 0 18px 40px rgba(0,0,0,0.5); }
+      .big .h { font-family: "{{FONTE_TITULO}}"; font-weight: 900; font-size: 44px; line-height: 1.05; white-space: nowrap; }
+      .big .s { font-size: 34px; color: #b8b8c4; margin-top: 10px; white-space: nowrap; }
+      .bell { width: 110px; height: 110px; display: block; margin-bottom: 12px; transform-origin: 50% 12%; }
+      .ln { height: 22px; border-radius: 11px; background: rgba(255,255,255,0.13); margin-top: 26px; }
+      .qm { position: absolute; right: 34px; bottom: 14px; font-family: "{{FONTE_TITULO}}"; font-weight: 900; font-size: 180px; color: rgba({{ATENCAO_RGB}},0.9); line-height: 1; opacity: 0; }
+      .tag { position: absolute; left: 150px; width: 700px; height: 86px; border-radius: 43px; display: flex; align-items: center; justify-content: center;
+        font-family: "{{FONTE_TITULO}}"; font-weight: 900; font-size: 40px; letter-spacing: 2px; opacity: 0; white-space: nowrap; }
+      .tag.r { background: {{ALERTA}}; color: {{FUNDO}}; }
+      .tag.a { background: {{ATENCAO}}; color: {{FUNDO}}; }
+      .tag.g { background: {{DESTAQUE}}; color: {{FUNDO}}; }
+      .row { position: absolute; left: 0; width: 1000px; height: 150px; border-radius: 30px; display: flex; align-items: center; gap: 30px; padding: 0 40px;
+        font-family: "{{FONTE_TITULO}}"; font-weight: 900; font-size: 37px; white-space: nowrap; background: rgba(12,20,16,0.96); border: 3px solid rgba({{DESTAQUE_RGB}},0.85);
+        box-shadow: 0 0 40px rgba({{DESTAQUE_RGB}},0.26); }
+      .ck { width: 84px; height: 84px; border-radius: 50%; border: 4px solid {{DESTAQUE}}; flex: none; position: relative; }
+      .ck svg { position: absolute; inset: 0; }
+      #fic { position: absolute; left: 260px; width: 480px; top: 6px; height: 66px; border-radius: 33px; border: 3px solid {{ATENCAO}}; color: {{ATENCAO}};
+        font-family: "{{FONTE_TITULO}}"; font-weight: 900; font-size: 32px; letter-spacing: 3px; display: flex; align-items: center; justify-content: center; }
+      .it { margin-top: 30px; font-family: "{{FONTE_TITULO}}"; font-weight: 900; font-size: 50px; display: flex; gap: 20px; align-items: baseline; opacity: 0; white-space: nowrap; }
+      .it span { color: {{DESTAQUE}}; font-size: 34px; letter-spacing: 3px; }
+
+      #card { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: hidden; border-radius: 0;
+        border: 0 solid rgba({{DESTAQUE_RGB}},0.85); box-shadow: 0 0 0 rgba({{DESTAQUE_RGB}},0); background: {{FUNDO}}; }
+      #vwrap { position: absolute; inset: 0; transform-origin: 50% 30%; }
+      #rosto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 36%; }
+
+      #front { position: absolute; inset: 0; pointer-events: none; }
+      .pill { position: absolute; left: 90px; width: 900px; top: 1380px; height: 128px; border-radius: 64px; background: {{DESTAQUE}}; color: {{FUNDO}};
+        font-family: "{{FONTE_TITULO}}"; font-weight: 900; font-size: 52px; display: flex; align-items: center; justify-content: center; gap: 20px;
+        box-shadow: 0 0 70px rgba({{DESTAQUE_RGB}},0.6); opacity: 0; }
+      #etiqueta { position: absolute; left: 50%; top: 90px; margin-left: -270px; width: 540px; height: 76px; border-radius: 38px; background: #ffffff; color: {{FUNDO}};
+        font-family: "{{FONTE_TITULO}}"; font-weight: 900; font-size: 34px; letter-spacing: 4px; display: flex; align-items: center; justify-content: center; opacity: 0; }
+      #titulo { position: absolute; left: 0; width: 1080px; top: 180px; text-align: center; opacity: 0;
+        font-family: "{{FONTE_TITULO}}"; font-weight: 900; font-size: 112px; line-height: 0.98; letter-spacing: 2px;
+        background: linear-gradient(180deg, #ffffff 0%, #b9ffd6 45%, {{DESTAQUE}} 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+        filter: drop-shadow(0 6px 24px rgba(0,0,0,0.65)); }
+      #fim { position: absolute; left: 60px; width: 960px; top: 1180px; text-align: center; opacity: 0;
+        font-family: "{{FONTE_TITULO}}"; font-weight: 900; font-size: 58px; line-height: 1.1; color: #fff; text-shadow: 0 4px 20px rgba(0,0,0,0.8); }
+      #flash { position: absolute; inset: 0; background: #ffffff; opacity: 0; }
+      #bar { position: absolute; left: 0; top: 0; height: 10px; width: 1080px; background: {{DESTAQUE}}; transform-origin: 0 50%; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="29.35" data-width="1080" data-height="1920">
+      <div id="backdrop"><div id="grid"></div></div>
+
+      <div id="panel">
+        <!-- S1: lembrete genérico ao lado de uma nota vazia -->
+        <div id="s1" class="scn">
+          <div class="kicker">LEMBRETE AUTOMÁTICO</div>
+          <div class="big" id="alm" style="left:0; top:80px; width:480px; height:520px;">
+            <svg class="bell" id="bell1" viewBox="0 0 24 24" fill="{{DESTAQUE}}"><path d="M12 2a2 2 0 0 0-2 2v.7C7.7 5.4 6 7.5 6 10v5l-2 2v1h16v-1l-2-2v-5c0-2.5-1.7-4.6-4-5.3V4a2 2 0 0 0-2-2zm0 20a2.5 2.5 0 0 0 2.4-2h-4.8A2.5 2.5 0 0 0 12 22z"/></svg>
+            <div class="h">Lembrete</div>
+            <div class="s">10:00 · Ligar para cliente</div>
+          </div>
+          <div class="big amb" id="nota" style="left:520px; top:80px; width:480px; height:520px; border-style:dashed;">
+            <div class="h">Nota</div>
+            <div class="ln" style="width:90%"></div><div class="ln" style="width:70%"></div><div class="ln" style="width:80%"></div>
+            <div class="qm" id="qm1">?</div>
+          </div>
+          <div class="tag r" id="tSem" style="top:650px;">SEM REGISTRO DO COMBINADO</div>
+        </div>
+
+        <!-- S2: toca no dia certo, mas sem contexto -->
+        <div id="s2" class="scn">
+          <div class="kicker">NO DIA CERTO, SEM CONTEXTO</div>
+          <div class="big" id="toc" style="left:0; top:70px; width:1000px; height:200px; display:flex; align-items:center; gap:30px;">
+            <svg class="bell" id="bell2" viewBox="0 0 24 24" fill="{{DESTAQUE}}" style="margin:0; flex:none;"><path d="M12 2a2 2 0 0 0-2 2v.7C7.7 5.4 6 7.5 6 10v5l-2 2v1h16v-1l-2-2v-5c0-2.5-1.7-4.6-4-5.3V4a2 2 0 0 0-2-2zm0 20a2.5 2.5 0 0 0 2.4-2h-4.8A2.5 2.5 0 0 0 12 22z"/></svg>
+            <div class="h">TOCOU NO DIA CERTO</div>
+          </div>
+          <div class="big red" id="sctx" style="left:0; top:310px; width:1000px; height:200px; display:flex; align-items:center;">
+            <div class="h" style="color:{{ALERTA}};">SEM CONTEXTO DO ATENDIMENTO</div>
+          </div>
+          <div class="big amb" id="auto" style="left:0; top:550px; width:1000px; height:200px; display:flex; align-items:center;">
+            <div class="h" style="color:{{ATENCAO}};">CONVERSA NO AUTOMÁTICO</div>
+          </div>
+        </div>
+
+        <!-- S3: registrar e revisar -->
+        <div id="s3" class="scn">
+          <div class="kicker">ANTES DE CHAMAR</div>
+          <div class="row" id="r1" style="top:80px;"><div class="ck"><svg viewBox="0 0 84 84" fill="none" stroke="{{DESTAQUE}}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><path id="k1" d="M22 44 L37 58 L63 28" stroke-dasharray="70" stroke-dashoffset="70"/></svg></div>REGISTRE A PRÓXIMA AÇÃO</div>
+          <div class="row" id="r2" style="top:270px;"><div class="ck"><svg viewBox="0 0 84 84" fill="none" stroke="{{DESTAQUE}}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><path id="k2" d="M22 44 L37 58 L63 28" stroke-dasharray="70" stroke-dashoffset="70"/></svg></div>REVISE O HISTÓRICO</div>
+          <div class="tag g" id="tCham" style="top:500px;">AÍ SIM, PODE CHAMAR</div>
+        </div>
+
+        <!-- S4: nota fictícia -->
+        <div id="s4" class="scn">
+          <div id="fic">EXEMPLO FICTÍCIO</div>
+          <div class="big" id="nf" style="left:0; top:120px; width:1000px; height:430px;">
+            <div class="h">Nota do atendimento</div>
+            <div class="it" id="it1"><span>VISITA</span>terça</div>
+            <div class="it" id="it2"><span>CONFIRMAR</span>horário na segunda</div>
+          </div>
+          <div class="tag a" id="tNf" style="top:610px;">PRÓXIMA AÇÃO REGISTRADA</div>
+        </div>
+      </div>
+
+      <div id="card">
+        <div id="vwrap">
+          <video id="rosto" class="clip" src="media/rosto.mp4" data-start="0" data-duration="29.35" data-track-index="1" muted playsinline></video>
+        </div>
+      </div>
+
+      <div id="front">
+        <div id="etiqueta">ROTINA DO CORRETOR</div>
+        <div id="titulo">LEMBRETE<br/>AUTOMÁTICO</div>
+        <div id="fim">COMO VOCÊ REGISTRA O PRÓXIMO PASSO?</div>
+        <div class="pill" id="pCta"><svg width="64" height="64" viewBox="0 0 24 24" fill="{{FUNDO}}"><path d="M4 4h16v12H7l-3 3z"/></svg>COMENTA AQUI</div>
+        <div id="flash"></div>
+        <div id="bar"></div>
+      </div>
+
+      <audio id="aud" src="media/audio.wav" data-start="0" data-duration="29.35" data-track-index="10" data-volume="1"></audio>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      const D = 29.35;
+      const FULL = { left: 0, top: 0, width: 1080, height: 1920, borderRadius: 0, borderWidth: 0, boxShadow: "0 0 0 rgba({{DESTAQUE_RGB}},0)" };
+      const SPLIT = { left: 40, top: 930, width: 1000, height: 880, borderRadius: 38, borderWidth: 3, boxShadow: "0 0 46px rgba({{DESTAQUE_RGB}},0.35), 0 22px 50px rgba(0,0,0,0.55)" };
+
+      tl.set("#flash", { opacity: 0 }, 0);
+      tl.fromTo("#bar", { scaleX: 0 }, { scaleX: 1, duration: D, ease: "none" }, 0);
+
+      function seg(target, t, dur, a, b, ease) {
+        tl.fromTo(target, { scale: a }, { scale: b, duration: dur, ease: ease || "none", immediateRender: false }, t);
+      }
+      function cut(t, o) { tl.fromTo("#flash", { opacity: o == null ? 0.45 : o }, { opacity: 0, duration: 0.22, ease: "power2.out", immediateRender: false }, t); }
+      function scene(id, a, b) {
+        tl.set(id, { opacity: 1 }, a);
+        tl.fromTo(id, { y: 50 }, { y: 0, duration: 0.42, ease: "power3.out", immediateRender: false }, a);
+        tl.set(id, { opacity: 0 }, b);
+      }
+      function pop(sel, t, from) {
+        tl.fromTo(sel, Object.assign({ opacity: 0, scale: 0.6, y: 50 }, from || {}),
+          { opacity: 1, scale: 1, y: 0, x: 0, duration: 0.42, ease: "back.out(1.7)" }, t);
+      }
+      function ring(sel, t, n) {
+        for (let i = 0; i < n; i++) {
+          tl.fromTo(sel, { rotation: -16 }, { rotation: 16, duration: 0.09, ease: "sine.inOut", immediateRender: false }, t + i * 0.18);
+          tl.fromTo(sel, { rotation: 16 }, { rotation: -16, duration: 0.09, ease: "sine.inOut", immediateRender: false }, t + i * 0.18 + 0.09);
+        }
+        tl.to(sel, { rotation: 0, duration: 0.1 }, t + n * 0.18);
+      }
+      function toSplit(t) { tl.fromTo("#card", FULL, Object.assign({ duration: 0.55, ease: "power3.inOut", immediateRender: false }, SPLIT), t); }
+      function toFull(t) { tl.fromTo("#card", SPLIT, Object.assign({ duration: 0.55, ease: "power3.inOut", immediateRender: false }, FULL), t); }
+
+      tl.set("#card", FULL, 0);
+      tl.set("#vwrap", { scale: 1 }, 0);
+
+      /* 0 a 3,0: abertura em tela cheia */
+      seg("#vwrap", 0, 3.0, 1, 1.07, "power1.inOut");
+      tl.fromTo("#etiqueta", { opacity: 0, y: -40, scale: 0.7 }, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "back.out(1.7)" }, 0.25);
+      tl.fromTo("#titulo", { opacity: 0, y: 60, scale: 0.85 }, { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power3.out" }, 0.4);
+      tl.to(["#etiqueta", "#titulo"], { opacity: 0, y: -30, duration: 0.3, ease: "power2.in" }, 2.6);
+
+      /* S1 3,0 a 5,75: lembrete genérico + nota vazia */
+      cut(3.0, 0.6); toSplit(3.0); scene("#s1", 3.15, 5.75);
+      seg("#vwrap", 3.0, 2.75, 1.04, 1.1, "power1.inOut");
+      pop("#alm", 3.4, { x: -120 });
+      pop("#nota", 3.9, { x: 120 });
+      tl.fromTo("#qm1", { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }, 4.3);
+      pop("#tSem", 4.95, { y: 40 });
+
+      /* S2 5,75 a 14,0: no dia certo, sem contexto */
+      cut(5.75, 0.5); scene("#s2", 5.85, 14.0);
+      seg("#vwrap", 5.75, 8.25, 1.1, 1.04, "power1.inOut");
+      pop("#toc", 5.95); ring("#bell2", 6.2, 4);
+      pop("#sctx", 9.0, { y: 60 });
+      tl.to("#sctx", { x: 8, duration: 0.06, yoyo: true, repeat: 5 }, 9.5);
+      pop("#auto", 11.3, { y: 60 });
+
+      /* S3 14,0 a 19,3: registrar e revisar */
+      cut(14.0, 0.5); scene("#s3", 14.1, 19.3);
+      seg("#vwrap", 14.0, 5.3, 1.04, 1.1, "power1.inOut");
+      pop("#r1", 14.3, { x: -140 }); pop("#r2", 16.3, { x: 140 });
+      tl.to("#k1", { strokeDashoffset: 0, duration: 0.35, ease: "power2.out" }, 15.4);
+      tl.to("#k2", { strokeDashoffset: 0, duration: 0.35, ease: "power2.out" }, 17.6);
+      pop("#tCham", 18.2, { y: 40 });
+
+      /* S4 19,3 a 24,28: nota fictícia */
+      cut(19.3, 0.5); scene("#s4", 19.4, 24.28);
+      seg("#vwrap", 19.3, 4.98, 1.1, 1.04, "power1.inOut");
+      pop("#fic", 19.5, { y: -30 });
+      pop("#nf", 19.9, { y: 80 });
+      tl.fromTo("#it1", { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: 0.4, ease: "power2.out" }, 21.0);
+      tl.fromTo("#it2", { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: 0.4, ease: "power2.out" }, 22.2);
+      pop("#tNf", 23.0, { y: 40 });
+
+      /* CTA 24,28 a 29,35: rosto cheio */
+      cut(24.28, 0.6); toFull(24.28);
+      seg("#vwrap", 24.28, 5.07, 1.02, 1.1, "power1.inOut");
+      tl.fromTo("#fim", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 25.3);
+      tl.fromTo("#pCta", { opacity: 0, scale: 0.6, y: 40 }, { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: "back.out(1.8)" }, 27.9);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "_ajuda": "Dados de quem usa o skill. Copie para perfil/perfil.json (ou deixe o skill criar na primeira execução). Chaves de API NÃO ficam aqui: vão no .env (veja .env.exemplo).",
+  "nome": "Seu Nome",
+  "idioma": "pt-BR",
+  "nicho": "descreva em uma frase o público e o assunto dos seus Reels",
+  "avatar": { "nomeNoFlow": "Eu", "formato": "selfie" },
+  "cenario": "descrição fixa do cenário que o avatar usa em todas as cenas",
+  "figurino": "descrição fixa da roupa que o avatar usa em todas as cenas",
+  "voz": {
+    "provedor": "elevenlabs",
+    "trocarVoz": true,
+    "voiceIdEnv": "ELEVENLABS_VOICE_ID",
+    "stability": 0.35,
+    "similarity": 1.0
+  },
+  "fotos": { "fonte": "pasta", "pasta": "perfil/fotos" },
+  "publicacao": {
+    "instagram": true,
+    "linkedin": false,
+    "exigirOrdemExplicita": true
+  },
+  "baixaNoCrm": { "ativo": false, "descricao": "ex.: marcar o item do planejamento como postado depois de publicar" },
+  "velocidadeFinal": 1.1
+}

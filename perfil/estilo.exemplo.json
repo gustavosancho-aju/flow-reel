@@ -1,0 +1,75 @@
+{
+  "_ajuda": "Identidade visual dos seus Reels. Na primeira vez, o skill preenche este arquivo a partir de 4 vídeos de referência (scripts/extrair-estilo.mjs + análise dos quadros) e salva em perfil/estilo.json. Este .exemplo.json é só o padrão neutro.",
+  "marca": {
+    "nome": "Sua Marca",
+    "handle": "@seuperfil"
+  },
+  "cores": {
+    "fundo": "#0A0A0F",
+    "destaque": "#00FF66",
+    "texto": "#FFFFFF",
+    "textoSecundario": "#B8B8C4",
+    "alerta": "#FF5A5A",
+    "atencao": "#FFB020"
+  },
+  "fontes": {
+    "titulo": {
+      "familia": "Arial Black",
+      "arquivo": "C:/Windows/Fonts/ariblk.ttf",
+      "peso": 900
+    },
+    "corpo": {
+      "familia": "Arial Bold",
+      "arquivo": "C:/Windows/Fonts/arialbd.ttf",
+      "peso": 700
+    },
+    "legenda": {
+      "familia": "Arial Black",
+      "arquivo": "C:/Windows/Fonts/ariblk.ttf",
+      "tamanho": 32
+    },
+    "_capa": "Opcional: capaTitulo e capaCorpo (mesmo formato de titulo/corpo) se a capa usar fontes diferentes do vídeo."
+  },
+  "legenda": {
+    "palavrasPorCartela": 3,
+    "caixaAlta": true,
+    "semPontuacaoFinal": true,
+    "posicaoVerticalPct": 88,
+    "corTexto": "#FFFFFF",
+    "contorno": true,
+    "caixaDeFundo": false
+  },
+  "layout": {
+    "tipo": "dividido",
+    "_tipos": "dividido (painel animado em cima + cartão do rosto embaixo) | tela-cheia | pessoa-no-canto",
+    "cartao": {
+      "raio": 38,
+      "borda": 3,
+      "brilho": true
+    },
+    "rostoTelaCheiaNaAbertura": true,
+    "aberturaSegundos": 3,
+    "rostoTelaCheiaNoCta": true
+  },
+  "elementos": [
+    "barra de progresso no topo",
+    "flash curto nos cortes",
+    "etiqueta + título grande na abertura",
+    "caixas numeradas",
+    "checklist com check desenhado",
+    "pill de CTA no final"
+  ],
+  "ritmo": {
+    "velocidadeFinal": 1.1,
+    "cortesPorMinuto": 12
+  },
+  "capa": {
+    "overlay": "escuro",
+    "linhaDestaque": true,
+    "fotoReal": true
+  },
+  "origem": {
+    "videosReferencia": [],
+    "extraidoEm": null
+  }
+}

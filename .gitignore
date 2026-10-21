@@ -1,0 +1,19 @@
+# Dados da pessoa e chaves: nunca vão para o repositório
+.env
+.env.local
+perfil/perfil.json
+perfil/estilo.json
+perfil/referencias/
+perfil/previa/
+perfil/fotos/
+perfil/fontes/
+
+# Saídas de trabalho
+*.mp4
+*.mov
+*.wav
+*.mp3
+*.webm
+node_modules/
+.hyperframes/
+renders/

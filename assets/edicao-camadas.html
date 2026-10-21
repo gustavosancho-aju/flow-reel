@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "{{FONTE_TITULO}}"; src: url("fonts/{{FONTE_TITULO_ARQUIVO}}"); font-weight: 900; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: {{FUNDO}}; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: {{FUNDO}};
+        font-family: "{{FONTE_TITULO}}", sans-serif; font-weight: 900; color: #fff; }
+
+      /* Camadas, de baixo para cima: vídeo original, fundo preto, elementos ATRÁS,
+         pessoa recortada (alpha), elementos NA FRENTE, efeitos. */
+      #vo { position: absolute; inset: 0; transform-origin: 50% 32%; z-index: 1; }
+      #vp { position: absolute; inset: 0; transform-origin: 50% 32%; z-index: 4; }
+      #vo video, #vp video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 36%; }
+
+      #dim { position: absolute; inset: 0; background: rgba(0,0,0,0.5); opacity: 0; z-index: 2; }
+      #bgBlack { position: absolute; inset: 0; z-index: 2; opacity: 0;
+        background:
+          radial-gradient(ellipse 80% 30% at 50% 22%, rgba({{DESTAQUE_RGB}},0.20), rgba({{DESTAQUE_RGB}},0) 70%),
+          radial-gradient(ellipse 90% 40% at 50% 100%, rgba({{DESTAQUE_RGB}},0.12), rgba({{DESTAQUE_RGB}},0) 70%),
+          {{FUNDO}}; }
+      #grid { position: absolute; inset: 0; opacity: 0.18;
+        background-image: linear-gradient(rgba({{DESTAQUE_RGB}},0.4) 1px, transparent 1px), linear-gradient(90deg, rgba({{DESTAQUE_RGB}},0.4) 1px, transparent 1px);
+        background-size: 90px 90px; -webkit-mask-image: linear-gradient(#000 0%, rgba(0,0,0,0) 70%); mask-image: linear-gradient(#000 0%, rgba(0,0,0,0) 70%); }
+
+      #behind { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+      .gigante { position: absolute; left: 0; width: 1080px; text-align: center; line-height: 0.9; white-space: nowrap; opacity: 0; color: {{DESTAQUE}};
+        text-shadow: 0 0 60px rgba({{DESTAQUE_RGB}},0.55); }
+      .contorno { color: rgba({{DESTAQUE_RGB}},0.10); -webkit-text-stroke: 5px {{DESTAQUE}}; text-shadow: none; }
+
+      #front { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+      .tag { position: absolute; height: 104px; padding: 0 44px; border-radius: 52px; display: flex; align-items: center; gap: 18px;
+        font-size: 50px; letter-spacing: 1px; white-space: nowrap; opacity: 0; background: #fff; color: {{FUNDO}}; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+      .tag.g { background: {{DESTAQUE}}; box-shadow: 0 0 60px rgba({{DESTAQUE_RGB}},0.55); }
+      .tag.d { background: {{FUNDO}}; color: #fff; border: 3px solid {{DESTAQUE}}; }
+      .tag.r { background: {{ALERTA}}; }
+      .card { position: absolute; width: 640px; height: 190px; padding: 26px 34px; border-radius: 30px; opacity: 0;
+        background: linear-gradient(160deg, rgba(20,28,24,0.97), rgba(10,14,12,0.97)); border: 3px solid {{DESTAQUE}};
+        box-shadow: 0 0 44px rgba({{DESTAQUE_RGB}},0.3), 0 18px 40px rgba(0,0,0,0.55); display: flex; align-items: center; gap: 26px; }
+      .card svg { width: 96px; height: 96px; flex: none; }
+      .card .t { font-size: 44px; line-height: 1.04; white-space: nowrap; }
+      .card .s { font-size: 28px; color: #b8b8c4; margin-top: 6px; font-weight: 700; white-space: nowrap; }
+      #etiqueta { position: absolute; left: 50%; top: 90px; margin-left: -250px; width: 500px; height: 76px; border-radius: 38px; background: #fff; color: {{FUNDO}};
+        font-size: 34px; letter-spacing: 4px; display: flex; align-items: center; justify-content: center; opacity: 0; }
+      #flash { position: absolute; inset: 0; background: #fff; opacity: 0; z-index: 6; }
+      #bar { position: absolute; left: 0; top: 0; height: 10px; width: 1080px; background: {{DESTAQUE}}; transform-origin: 0 50%; z-index: 7; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="32.6" data-width="1080" data-height="1920">
+      <div id="vo"><video id="orig" class="clip" src="media/rosto.mp4" data-start="0" data-duration="32.6" data-track-index="1" muted playsinline></video></div>
+      <div id="dim"></div>
+      <div id="bgBlack"><div id="grid"></div></div>
+
+      <div id="behind" data-layout-allow-occlusion data-layout-allow-overflow>
+        <div class="gigante" id="g3" style="top:20px; left:330px; font-size:640px;">3</div>
+        <div class="gigante contorno" id="gnao" style="top:100px; font-size:340px;">NÃO</div>
+        <div class="gigante" id="ggrok" style="top:110px; font-size:330px; letter-spacing:6px;">GROK</div>
+        <div class="gigante contorno" id="gn1" style="top:60px; left:-340px; font-size:430px;">1</div>
+        <div class="gigante contorno" id="gn2" style="top:60px; left:0px; font-size:430px;">2</div>
+        <div class="gigante contorno" id="gn3" style="top:60px; left:340px; font-size:430px;">3</div>
+        <div class="gigante" id="gpreco" style="top:110px; font-size:268px;">R$150</div>
+        <div class="gigante contorno" id="grev" style="top:120px; font-size:270px;">REVISO</div>
+        <div class="gigante" id="gauto" style="top:150px; font-size:160px; letter-spacing:2px;">AUTOMAÇÃO</div>
+      </div>
+
+      <div id="vp"><video id="pessoa" class="clip" src="media/pessoa.webm" data-start="0" data-duration="32.6" data-track-index="2" muted playsinline></video></div>
+
+      <div id="front">
+        <div id="etiqueta">MEU NOVO TIME</div>
+        <div class="tag" id="tFunc" style="left:60px; top:1180px;">FUNCIONÁRIOS</div>
+
+        <div class="tag" id="tn1" style="left:50px; top:1120px;">NÃO DORMEM</div>
+        <div class="tag" id="tn2" style="right:50px; top:1250px;">NÃO FALTAM</div>
+        <div class="tag g" id="tn3" style="left:50px; top:1380px;">NÃO PEDEM AUMENTO</div>
+
+        <div class="tag" id="tFuncao" style="left:60px; top:1180px;">UMA FUNÇÃO</div>
+        <div class="tag g" id="tCmd" style="right:60px; top:1320px;">UM COMANDO CLARO</div>
+
+        <div class="card" id="c1" style="left:40px; top:1010px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="{{DESTAQUE}}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.8" fill="{{DESTAQUE}}"/></svg>
+          <div><div class="t">INSTAGRAM</div><div class="s">social media</div></div>
+        </div>
+        <div class="card" id="c2" style="left:400px; top:1210px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="{{DESTAQUE}}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg>
+          <div><div class="t">WHATSAPP</div><div class="s">resumo do que importa</div></div>
+        </div>
+        <div class="card" id="c3" style="left:40px; top:1410px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="{{DESTAQUE}}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c0-1 1-1.6 2.5-1.6s2.5.6 2.5 1.6-1 1.5-2.5 1.9-2.5.9-2.5 2 1 1.7 2.5 1.7 2.5-.7 2.5-1.7"/></svg>
+          <div><div class="t">FINANCEIRO</div><div class="s">pagamentos e recebimentos</div></div>
+        </div>
+
+        <div class="tag g" id="tMes" style="right:60px; top:1180px;">POR MÊS</div>
+        <div class="tag" id="tMais" style="left:60px; top:1310px;">+ MUITO MAIS</div>
+
+        <div class="tag" id="tExe" style="left:60px; top:1180px;">ELES EXECUTAM</div>
+        <div class="tag g" id="tRev" style="right:60px; top:1180px;">EU REVISO</div>
+        <div class="tag d" id="tHum" style="left:90px; top:1340px;">QUEM DECIDE: O HUMANO</div>
+
+        <div class="tag g" id="tCta" style="left:90px; width:900px; top:1330px; justify-content:center; height:128px; border-radius:64px; font-size:56px;">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="{{FUNDO}}"><path d="M4 4h16v12H7l-3 3z"/></svg>COMENTA AUTOMAÇÃO</div>
+        <div id="flash"></div>
+        <div id="bar"></div>
+      </div>
+
+      <audio id="aud" src="media/audio.wav" data-start="0" data-duration="32.6" data-track-index="10" data-volume="1"></audio>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      const D = 32.6;
+      const VW = ["#vo", "#vp"];
+
+      tl.set("#flash", { opacity: 0 }, 0);
+      tl.fromTo("#bar", { scaleX: 0 }, { scaleX: 1, duration: D, ease: "none" }, 0);
+
+      function seg(t, dur, a, b, ease) { tl.fromTo(VW, { scale: a }, { scale: b, duration: dur, ease: ease || "none", immediateRender: false }, t); }
+      function cut(t, o) { tl.fromTo("#flash", { opacity: o == null ? 0.5 : o }, { opacity: 0, duration: 0.22, ease: "power2.out", immediateRender: false }, t); }
+      function fundo(t, preto, dim) {
+        tl.set("#bgBlack", { opacity: preto ? 1 : 0 }, t);
+        tl.set("#dim", { opacity: dim ? 1 : 0 }, t);
+      }
+      function pop(sel, t, from, fim) {
+        tl.fromTo(sel, Object.assign({ opacity: 0, scale: 0.6, y: 50 }, from || {}), { opacity: 1, scale: 1, y: 0, x: 0, duration: 0.42, ease: "back.out(1.7)", immediateRender: false }, t);
+        if (fim) tl.to(sel, { opacity: 0, scale: 0.9, duration: 0.2, ease: "power2.in" }, fim);
+      }
+      function gig(sel, t, fim, from) {
+        tl.fromTo(sel, Object.assign({ opacity: 0, scale: 0.7 }, from || {}), { opacity: 0.95, scale: 1, duration: 0.5, ease: "back.out(1.6)", immediateRender: false }, t);
+        tl.to(sel, { opacity: 0, duration: 0.2, ease: "power2.in" }, fim);
+      }
+      function pulso(sel, t) {
+        tl.fromTo(sel, { scale: 1 }, { scale: 1.12, duration: 0.14, yoyo: true, repeat: 1, ease: "sine.inOut", immediateRender: false }, t);
+      }
+
+      tl.set(VW, { scale: 1 }, 0);
+      fundo(0, false, true);
+
+      /* A 0 a 1,8: abertura no fundo original; o 3 grande aparece atrás da cabeça */
+      seg(0, 1.8, 1, 1.07, "power1.inOut");
+      tl.fromTo("#etiqueta", { opacity: 0, y: -40, scale: 0.7 }, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "back.out(1.7)" }, 0.2);
+      tl.to("#etiqueta", { opacity: 0, y: -30, duration: 0.25 }, 1.55);
+      gig("#g3", 0.56, 1.8);
+      pop("#tFunc", 0.95, { x: -120 }, 1.8);
+
+      /* B 1,8 a 5,5: fundo preto, "NÃO" atrás e três tags na frente */
+      cut(1.8, 0.65); fundo(1.8, true, false);
+      seg(1.8, 3.7, 1.05, 1.0, "power1.inOut");
+      gig("#gnao", 2.0, 5.45, { y: 40 });
+      pulso("#gnao", 3.06); pulso("#gnao", 4.18);
+      pop("#tn1", 2.2, { x: -140 }, 5.4); pop("#tn2", 3.18, { x: 140 }, 5.4); pop("#tn3", 4.42, { x: -140 }, 5.4);
+
+      /* C 5,5 a 10,3: fundo original, GROK atrás da cabeça */
+      cut(5.5, 0.55); fundo(5.5, false, true);
+      seg(5.5, 4.8, 1.0, 1.08, "power1.inOut");
+      gig("#ggrok", 6.5, 10.25);
+      pop("#tFuncao", 8.08, { x: -120 }, 10.25); pop("#tCmd", 9.2, { x: 120 }, 10.25);
+
+      /* D 10,3 a 17,3: fundo preto, números atrás e os três cartões na frente */
+      cut(10.3, 0.65); fundo(10.3, true, false);
+      seg(10.3, 7.0, 1.06, 1.0, "power1.inOut");
+      gig("#gn1", 11.0, 17.25); gig("#gn2", 12.9, 17.25); gig("#gn3", 14.6, 17.25);
+      pop("#c1", 11.1, { x: -160 }, 17.2); pop("#c2", 13.0, { x: 160 }, 17.2); pop("#c3", 14.7, { x: -160 }, 17.2);
+
+      /* E 17,3 a 22,9: fundo original escurecido, preço gigante atrás */
+      cut(17.3, 0.55); fundo(17.3, false, true);
+      seg(17.3, 5.6, 1.0, 1.09, "power1.inOut");
+      gig("#gpreco", 18.4, 22.85, { y: 60 });
+      pulso("#gpreco", 19.7);
+      pop("#tMes", 20.3, { x: 120 }, 22.85); pop("#tMais", 21.8, { x: -120 }, 22.85);
+
+      /* F 22,9 a 28,3: fundo preto, REVISO atrás e a mensagem final */
+      cut(22.9, 0.65); fundo(22.9, true, false);
+      seg(22.9, 5.4, 1.07, 1.0, "power1.inOut");
+      gig("#grev", 24.3, 28.25, { y: 40 });
+      pop("#tExe", 23.34, { x: -140 }, 28.25); pop("#tRev", 24.44, { x: 140 }, 28.25); pop("#tHum", 26.6, { y: 60 }, 28.25);
+
+      /* G 28,3 a 32,6: fundo original, AUTOMAÇÃO atrás, CTA na frente */
+      cut(28.3, 0.6); fundo(28.3, false, true);
+      seg(28.3, 4.3, 1.02, 1.1, "power1.inOut");
+      gig("#gauto", 29.0, 32.6);
+      pop("#tCta", 29.4, { y: 80 });
+      pulso("#tCta", 31.2);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

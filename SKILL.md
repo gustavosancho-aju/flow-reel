@@ -245,6 +245,17 @@ npx hyperframes check && npx hyperframes snapshot --at <tempos>
 npx hyperframes render --output renders/motion.mp4
 ```
 
+**Layout em camadas (rosto em tela cheia, sem tela dividida):** quando a pessoa pedir "sem tela
+dividida" ou "elementos atrás do rosto", use `node scripts/aplicar-estilo-template.mjs edicao/index.html camadas`
+(template `assets/edicao-camadas.html`). Camadas, de baixo para cima: vídeo original, fundo preto,
+elementos ATRÁS, **pessoa recortada** (`pessoa.webm`, gerado por `npx hyperframes remove-background limpo.mp4
+-o pessoa.webm --quality=balanced`, ~10 min para 30s em CPU, rode em segundo plano logo depois do
+Passo 4b), elementos NA FRENTE. Os blocos alternam **fundo original** e **fundo preto** a cada virada de
+fala. Este é o caso em que o recorte é permitido, porque o pedido exige elementos atrás da pessoa.
+Regras aprendidas: textos gigantes atrás ficam **na faixa acima da cabeça** (no centro o rosto os esconde:
+"G..K", "R..SO"); texto só com contorno precisa de preenchimento leve (`rgba(destaque,0.10)`) senão o
+`check` acusa "text_not_painted"; sobre o fundo original claro, escureça com `#dim` para o verde ter contraste.
+
 Depois de aplicar o template, **reescreva os painéis** com o conteúdo do Reel, mas
 respeite `estilo.layout` e `estilo.elementos` (se o estilo não tem checklist, não
 use checklist). Se `estilo.layout.tipo` for `tela-cheia` ou `pessoa-no-canto`, adapte
@@ -277,7 +288,7 @@ o template (o padrão fornecido é `dividido`).
 
 ## Passo 7: Voz clonada (módulo opcional, `perfil.voz.trocarVoz`)
 
-Pule se a pessoa não usa voz clonada. **Faça este passo ANTES do Passo 6**, sobre o
+Pule se a pessoa não usa voz clonada. **Depois da troca, retranscreva com DOIS transcritores** (`transcrever-openai.mjs` e `timestamps-palavras.mjs`): a troca de voz pode inserir uma palavra (já apareceu "comenta **a** automação") e o Whisper/Groq também inventa palavras sozinho, então só vale como erro real o que o segundo transcritor confirmar. Se for erro real, refaça a troca **só do trecho** (poucos créditos), emende com `acrossfade` de 25ms e retranscreva. **Faça este passo ANTES do Passo 6**, sobre o
 `limpo.mp4` (sem repetições): os tempos de `palavras.json` vêm da voz final e os
 motions ficam sincronizados; a troca de voz preserva o tempo da fala.
 

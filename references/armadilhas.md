@@ -314,3 +314,16 @@ descobrir. Ler antes de debugar do zero.
   sistema (link e horário da publicação) e **não crie um registro paralelo**, que
   duplica. Confirme no sistema que o status mudou. Configure o destino em
   `perfil.baixaNoCrm`.
+
+## Reel em camadas e voz (21/10/2026)
+
+- **`FLOW_REEL_ENV`:** o repositório não carrega o `.env.local` de outro projeto sozinho. Aponte com
+  `export FLOW_REEL_ENV=/caminho/do/.env.local` (sem copiar segredo para o repo).
+- **Microfone no peito do avatar:** em 3 de 6 cenas apareceu um microfone verde (vem da referência do avatar).
+  Regere essas cenas com "Não há nenhum microfone nem objeto na frente do peito dele".
+- **Chip do Flow no projeto novo:** pode vir 16:9, 10s e x4 (60 créditos). Conferir e ajustar para 9:16, 8s, x1 antes da 1ª cena.
+- **Transcritores divergem:** o Groq inseriu "a" em "comenta a automação" mesmo no áudio ORIGINAL. Confirme com o
+  OpenAI antes de gastar créditos refazendo voz.
+- **Valores falados:** o Whisper escreve "cento e cinquenta reais" como "R$ 150,00" em dois tokens. Antes de gerar a
+  legenda, junte em "R$150" e troque "Grock/Groq" por "Grok" num `palavras_legenda.json` separado.
+- **`aplicar-estilo-template.mjs` falhava ao reaplicar** por a fonte do sistema vir somente leitura; o script agora apaga o destino antes de copiar.

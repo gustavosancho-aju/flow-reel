@@ -38,7 +38,10 @@ A saída é um JSON (`pronto`, `primeiroUso`, `faltando`).
 
 ### Onboarding (só na primeira vez, ou quando `faltando` listar itens)
 
-**Etapa A: pedir 4 vídeos de referência.** Diga à pessoa, em uma mensagem:
+**Etapa A: pedir 4 vídeos de referência.** Se a pessoa quiser usar Reels que ela mesma
+já publicou, dá para baixar pela API do Instagram (`GET /{media-id}?fields=media_url`);
+Reels com música da biblioteca do Instagram vêm **sem `media_url`**, então escolha outros.
+Diga à pessoa, em uma mensagem:
 
 > Para o seu Reel sair com a sua cara, preciso de **4 vídeos de referência** de
 > edição que você gosta (Reels seus ou de outras contas). Mande 4 caminhos de
@@ -84,15 +87,18 @@ Regras:
 4. Copie `perfil/estilo.exemplo.json` para `perfil/estilo.json` e preencha. Mantenha
    `origem.videosReferencia` com os 4 nomes e `origem.extraidoEm` com a data.
 
-**Etapa D: confirmar o estilo com a pessoa (obrigatório).** Mostre um resumo de uma
-tela (cores com hex, fontes, legenda, layout, elementos, ritmo) e, para ver na
-prática, gere a prévia:
+**Etapa D: confirmar o estilo com a pessoa (obrigatório).** Gere a cartela de estilo
+(funciona sem nenhum vídeo: cores com hex, título, pílulas, cartão, amostra de legenda,
+layout, ritmo e elementos) e mande a imagem para ela:
 
 ```bash
-node scripts/aplicar-estilo-template.mjs perfil/previa/index.html
+node scripts/cartela-estilo.mjs perfil/cartela.png
 ```
 
-Só siga com a aprovação dela. Ajustes pedidos voltam para o `estilo.json`.
+Leia a cartela antes de mandar (texto cortado, fonte errada caindo em Arial). Só siga
+com a aprovação dela; ajustes voltam para o `estilo.json` e a cartela é refeita. A
+prévia animada do template (`aplicar-estilo-template.mjs`) só faz sentido no primeiro
+Reel, quando já existe vídeo para pôr nela.
 
 **Etapa E: perfil da pessoa.** Copie `perfil/perfil.exemplo.json` para
 `perfil/perfil.json` e preencha, perguntando só o que falta:

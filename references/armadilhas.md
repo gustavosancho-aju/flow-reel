@@ -335,3 +335,19 @@ descobrir. Ler antes de debugar do zero.
 - **Variante que acerta pode trazer palavra a mais** ("..., tá?"): cortar no fim da última palavra do roteiro antes de usar.
 - **Regex em string de template perde a barra invertida** ao gerar scripts por substituição de texto (`/s+/` virou `/s+/` e
   quebrou a comparação). Sempre rodar um teste mínimo do conferidor com um texto conhecido.
+
+## Onboarding e cartela (31/10/2026)
+
+- **Cor de destaque medida errada:** a média por quantização puxava o neon para o tom do
+  brilho difuso (`#04843C` em vez de `#00FF66`) e deixava passar tom de pele. O
+  `extrair-estilo.mjs` agora só considera pixels saturados e claros, agrupa por matiz e
+  mede a cor nos pixels mais brilhantes; o consenso entre vídeos acertou `#07F364` em 3 de 4.
+  O hex exato da marca não sobrevive à compressão: confirme com a pessoa.
+- **Reel com música da biblioteca do Instagram não tem `media_url`** na API; use outro.
+- **`drawtext` com `textfile`:** sem `expansion=none`, um `%` no texto faz a linha inteira
+  sumir sem erro; uma quebra de linha no arquivo vira um quadradinho. Uma linha por `drawtext`.
+- **Fonte copiada duas vezes dá `EPERM`** (a fonte instalada no Windows vem somente leitura e a
+  cópia herda isso). Use `copiarFonte()` de `lib/midia.mjs` em qualquer script novo.
+- **Substituição de código pela linha de comando (`sed`, `node -e`) perde barra invertida** em
+  regex e quebra em silêncio (`/\s+/` virou `/s+/`, `/\[nr]/` virou `/\[nr]/`). Edite com o
+  editor, nunca por substituição de texto no shell.

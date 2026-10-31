@@ -19,11 +19,11 @@
  *    node scripts/escolher-voz.mjs gravar <A|B|B+1|C|C+1|C+2...>
  */
 import { spawnSync } from "child_process";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { basename, dirname, join, resolve } from "path";
 import { RAIZ, estilo, perfil, usandoExemplo } from "./lib/config.mjs";
 import { conferir } from "./lib/conferir.mjs";
-import { ff, duracao, fatorSemitons, WAV_MONO } from "./lib/midia.mjs";
+import { copiarFonte, ff, duracao, fatorSemitons, WAV_MONO } from "./lib/midia.mjs";
 
 const METODOS = { A: "original", B: "troca", C: "texto" };
 const [, , acao, ...resto] = process.argv;
@@ -115,7 +115,7 @@ for (const o of opcoes) {
 // vídeo de comparação: mesmo trecho, cada opção na velocidade final, com etiqueta
 const fonte = estilo.fontes?.titulo?.arquivo;
 const fonteLocal = fonte && existsSync(fonte) ? basename(fonte) : null;
-if (fonteLocal) copyFileSync(fonte, P(fonteLocal));
+if (fonteLocal) copiarFonte(fonte, P(fonteLocal));
 const partes = [];
 for (const o of opcoes) {
   const etiqueta = `${o.id}  -  ${o.nome}`.replace(/[:',\\]/g, " ");

@@ -12,7 +12,8 @@
  *   camadas: rosto em tela cheia com elementos ATRÁS e NA FRENTE da pessoa recortada,
  *            alternando fundo original e fundo preto (assets/edicao-camadas.html; exige pessoa.webm)
  */
-import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { mkdirSync, readFileSync, writeFileSync } from "fs";
+import { copiarFonte } from "./lib/midia.mjs";
 import { basename, dirname, resolve } from "path";
 import { RAIZ, estilo, rgb } from "./lib/config.mjs";
 
@@ -46,8 +47,7 @@ for (const f of Object.values(estilo.fontes)) {
   if (!f?.arquivo || copiadas.has(f.arquivo)) continue;
   copiadas.add(f.arquivo);
   const destino = resolve(pasta, "fonts", basename(f.arquivo));
-  rmSync(destino, { force: true }); // fonte do sistema vem somente leitura: recopiar exige apagar antes
-  copyFileSync(f.arquivo, destino);
+  copiarFonte(f.arquivo, destino); // fonte do sistema vem somente leitura: ver lib/midia.mjs
 }
 writeFileSync(resolve(saida), html);
 console.log("ok", saida, "· fontes copiadas para", resolve(pasta, "fonts"));

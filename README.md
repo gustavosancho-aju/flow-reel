@@ -66,7 +66,7 @@ Como ainda não existe `perfil/estilo.json`, o skill faz o onboarding:
    cores, o ritmo de cortes (`scripts/extrair-estilo.mjs`).
 3. **Lê os quadros** e propõe: cores, fontes (e **pergunta o nome e o arquivo exato**,
    porque fonte não se adivinha pela imagem), estilo de legenda, layout e elementos.
-4. **Mostra uma prévia** e só segue com a sua aprovação.
+4. **Mostra uma cartela de estilo** (cores, fontes, legenda, pílulas e cartões, sem precisar de vídeo) e só segue com a sua aprovação.
 5. **Pergunta o resto do perfil**: nome, nicho, nome do avatar no Flow, cenário e
    figurino fixos, voz, destinos de publicação.
 

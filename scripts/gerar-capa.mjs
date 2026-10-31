@@ -10,7 +10,8 @@
  * Env: L1, L2, L3 (linha verde), SUB
  */
 import { execFileSync } from "child_process";
-import { mkdirSync, copyFileSync, existsSync } from "fs";
+import { mkdirSync } from "fs";
+import { copiarFonte } from "./lib/midia.mjs";
 import { dirname, basename, resolve } from "path";
 import { env, estilo, perfil, ffColor, assColor, rgb } from "./lib/config.mjs";
 
@@ -21,7 +22,7 @@ for (const [origem, destino] of [
   [(estilo.fontes.capaTitulo || estilo.fontes.titulo).arquivo, "black.ttf"],
   [(estilo.fontes.capaCorpo || estilo.fontes.corpo).arquivo, "bold.ttf"],
 ]) {
-  if (!existsSync(resolve(DIR, destino))) copyFileSync(origem, resolve(DIR, destino));
+  copiarFonte(origem, resolve(DIR, destino)); // sempre recopia: o estilo pode ter trocado a fonte
 }
 
 const BARRA = String.fromCharCode(92);

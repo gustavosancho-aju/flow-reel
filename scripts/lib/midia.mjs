@@ -2,6 +2,21 @@
  * Utilidades de mídia (ffmpeg/ffprobe) usadas pelos scripts de voz.
  */
 import { spawnSync } from "child_process";
+import { chmodSync, copyFileSync, existsSync, rmSync } from "fs";
+
+/**
+ * Copia uma fonte para a pasta de trabalho. Fontes instaladas no Windows vêm somente
+ * leitura e a cópia herda isso: copiar de novo por cima dá EPERM. Apaga antes e libera
+ * a escrita depois.
+ */
+export function copiarFonte(origem, destino) {
+  if (existsSync(destino)) {
+    try { chmodSync(destino, 0o666); } catch {}
+    rmSync(destino, { force: true });
+  }
+  copyFileSync(origem, destino);
+  try { chmodSync(destino, 0o666); } catch {}
+}
 
 /** Roda ffmpeg (-y -v error ...). Lança erro com o stderr se falhar. */
 export function ff(args, opcoes = {}) {

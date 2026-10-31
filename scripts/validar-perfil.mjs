@@ -31,6 +31,15 @@ else {
   }
 }
 
+// avisos não bloqueiam: são decisões que o próprio fluxo resolve na hora certa
+const avisos = [];
+if (perfil && !perfil.voz?.metodo && perfil.voz?.trocarVoz !== false) {
+  avisos.push("voz ainda não escolhida: o Passo 7 fará o teste A/B (scripts/escolher-voz.mjs)");
+}
+if (perfil && !perfil.envArquivo && !existsSync(resolve(RAIZ, ".env.local")) && !process.env.FLOW_REEL_ENV) {
+  avisos.push("nenhum .env encontrado no repositório: crie .env.local (veja .env.exemplo) ou aponte perfil.envArquivo");
+}
+
 const primeiroUso = !perfil && !estilo;
-console.log(JSON.stringify({ pronto: faltando.length === 0, primeiroUso, faltando }));
+console.log(JSON.stringify({ pronto: faltando.length === 0, primeiroUso, faltando, avisos }));
 process.exit(faltando.length ? 2 : 0);

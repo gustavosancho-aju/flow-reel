@@ -13,10 +13,19 @@
   "figurino": "descrição fixa da roupa que o avatar usa em todas as cenas",
   "voz": {
     "provedor": "elevenlabs",
-    "trocarVoz": true,
     "voiceIdEnv": "ELEVENLABS_VOICE_ID",
+    "metodo": null,
+    "_metodo": "original | troca | texto. Fica null até o teste A/B do Passo 7 (scripts/escolher-voz.mjs).",
+    "ajusteSemitons": 0,
     "stability": 0.35,
-    "similarity": 1
+    "similarity": 1,
+    "texto": {
+      "modelo": "eleven_v4",
+      "stability": 0.5,
+      "similarity": 0.9,
+      "style": 0.2,
+      "speed": 1.1
+    }
   },
   "fotos": {
     "fonte": "pasta",

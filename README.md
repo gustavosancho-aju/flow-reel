@@ -81,9 +81,9 @@ Reel pula direto para o roteiro.
 | 1 | Roteiro (se você não trouxe pronto) | |
 | 2 | Gera as cenas no Flow e baixa | (Chrome) |
 | 3 | Confere cada cena, monta base e folha de contato | `transcrever-openai.mjs` |
-| 4 | Corta silêncio e **retranscreve** para caçar repetições e erros do avatar | `cortar-silencio.mjs`, `timestamps-palavras.mjs` |
+| 4 | Corta silêncio, **retranscreve** para caçar repetições e erros do avatar e alinha o roteiro com os tempos | `cortar-silencio.mjs`, `timestamps-palavras.mjs`, `frases.mjs` |
 | 5 | Mantém o **fundo original** (fundo único só se você pedir) | `gerar-fundo.mjs` (opcional) |
-| 7 | Troca pela sua voz (opcional) | `trocar-voz-elevenlabs.mjs` |
+| 7 | Voz: teste A/B guiado na primeira vez (voz do Flow, troca de voz ou fala por texto, com variações de tom), depois automática com conferência frase a frase | `escolher-voz.mjs`, `gerar-voz.mjs` |
 | 6 | Edita com motions no seu estilo | `aplicar-estilo-template.mjs`, HyperFrames |
 | 8 | Legenda e montagem final em 1,1x, com conferência da fala | `gerar-legenda.mjs`, `verificar-legenda.mjs` |
 | 9 | Capa e legenda do post | `gerar-capa.mjs` |

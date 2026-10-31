@@ -14,8 +14,8 @@
   "voz": {
     "provedor": "elevenlabs",
     "voiceIdEnv": "ELEVENLABS_VOICE_ID",
-    "metodo": null,
-    "_metodo": "original | troca | texto. Fica null até o teste A/B do Passo 7 (scripts/escolher-voz.mjs).",
+    "metodo": "texto",
+    "_metodo": "texto (padrão: fala por texto com sincronia labial por palavra) | troca | original. Para comparar: scripts/escolher-voz.mjs",
     "ajusteSemitons": 0,
     "stability": 0.35,
     "similarity": 1,

@@ -48,13 +48,32 @@ export function normalizar(texto) {
     .filter(Boolean);
 }
 
+/** Diferença em letras entre duas palavras. */
+function letras(a, b) {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...new Array(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+
+/**
+ * Mesma palavra? Palavras de 4+ letras aceitam 1 letra de diferença: o transcritor escreve
+ * nome de marca de vários jeitos ("Grok", "Grock", "Grog") e isso não é erro de fala.
+ * Palavras curtas ("o", "no", "com") continuam exatas: são as que a voz costuma engolir.
+ */
+export function mesmaPalavra(a, b) {
+  if (a === b) return true;
+  return Math.min(a.length, b.length) >= 4 && letras(a, b) <= 1;
+}
+
 /** Distância de edição entre duas listas de palavras. */
 export function distancia(a, b) {
   const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...new Array(b.length).fill(0)]);
   for (let j = 1; j <= b.length; j++) d[0][j] = j;
   for (let i = 1; i <= a.length; i++) {
     for (let j = 1; j <= b.length; j++) {
-      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (mesmaPalavra(a[i - 1], b[j - 1]) ? 0 : 1));
     }
   }
   return d[a.length][b.length];
@@ -67,12 +86,34 @@ export function taxa(esperado, ouvido) {
   return distancia(a, normalizar(ouvido)) / a.length;
 }
 
+const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * POST com nova tentativa em limite de uso (429) e erro temporário (5xx). O Groq limita
+ * 20 transcrições por minuto, e a sincronia por palavra faz várias por frase.
+ * `montar` recria o corpo a cada tentativa (FormData não pode ser reenviado).
+ */
+export async function postComRetry(url, headers, montar, tentativas = 6) {
+  for (let i = 1; ; i++) {
+    const r = await fetch(url, { method: "POST", headers, body: montar() });
+    if ((r.status !== 429 && r.status < 500) || i >= tentativas) return r;
+    const texto = await r.text();
+    const sugerido = Number(r.headers.get("retry-after")) || Number((texto.match(/try again in ([\d.]+)s/i) || [])[1]) || 0;
+    const ms = Math.min(60000, Math.max(sugerido * 1000 + 500, 2000 * i));
+    console.log(`    limite de uso (${r.status}), esperando ${(ms / 1000).toFixed(0)}s...`);
+    await esperar(ms);
+  }
+}
+
 async function transcrever(url, chave, modelo, arquivo) {
-  const form = new FormData();
-  form.append("file", new Blob([readFileSync(arquivo)]), basename(arquivo));
-  form.append("model", modelo);
-  form.append("language", "pt");
-  const r = await fetch(url, { method: "POST", headers: { Authorization: `Bearer ${chave}` }, body: form });
+  const montar = () => {
+    const form = new FormData();
+    form.append("file", new Blob([readFileSync(arquivo)]), basename(arquivo));
+    form.append("model", modelo);
+    form.append("language", "pt");
+    return form;
+  };
+  const r = await postComRetry(url, { Authorization: `Bearer ${chave}` }, montar);
   if (!r.ok) throw new Error(`transcrição ${modelo} ${r.status}: ${(await r.text()).slice(0, 200)}`);
   return ((await r.json()).text || "").trim();
 }

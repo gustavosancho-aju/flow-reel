@@ -83,9 +83,9 @@ Reel pula direto para o roteiro.
 | 3 | Confere cada cena, monta base e folha de contato | `transcrever-openai.mjs` |
 | 4 | Corta silêncio, **retranscreve** para caçar repetições e erros do avatar e alinha o roteiro com os tempos | `cortar-silencio.mjs`, `timestamps-palavras.mjs`, `frases.mjs` |
 | 5 | Mantém o **fundo original** (fundo único só se você pedir) | `gerar-fundo.mjs` (opcional) |
-| 7 | Voz: teste A/B guiado na primeira vez (voz do Flow, troca de voz ou fala por texto, com variações de tom), depois automática com conferência frase a frase | `escolher-voz.mjs`, `gerar-voz.mjs` |
+| 7 | Voz: fala por texto com a sua voz clonada e **sincronia labial por palavra** (padrão), conferida frase a frase; teste A/B opcional com troca de voz e voz do Flow | `gerar-voz.mjs`, `escolher-voz.mjs` |
 | 6 | Edita com motions no seu estilo | `aplicar-estilo-template.mjs`, HyperFrames |
-| 8 | Legenda e montagem final em 1,1x, com conferência da fala | `gerar-legenda.mjs`, `verificar-legenda.mjs` |
+| 8 | Legenda com o texto do roteiro e os tempos da voz, montagem final na velocidade do perfil e conferência da fala | `palavras-legenda.mjs`, `gerar-legenda.mjs`, `verificar-legenda.mjs` |
 | 9 | Capa e legenda do post | `gerar-capa.mjs` |
 | 10 | Publica (só com a sua ordem) | `upload-supabase.mjs`, `publicar-instagram.mjs`, `publicar-linkedin-video.mjs` |
 

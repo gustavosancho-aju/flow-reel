@@ -83,7 +83,16 @@ for (let i = 0; i < saidaFrases.length - 1; i++) {
   const prox = saidaFrases[i + 1];
   if (saidaFrases[i].fim > prox.inicio - 0.04) saidaFrases[i].fim = Math.max(saidaFrases[i].inicio + 0.2, prox.inicio - 0.04);
 }
-const final = saidaFrases.map((f) => ({ texto: f.texto, inicio: +f.inicio.toFixed(2), fim: +f.fim.toFixed(2), ...(f.estimada ? { estimada: true } : {}) }));
+// instante em que o avatar fala cada palavra da frase (base do encaixe por palavra, a "sincronia labial")
+const palavrasDaFrase = (idx) =>
+  R.map((r, i) => (r.frase === idx && par[i] >= 0 ? { w: r.w, inicio: +T[par[i]].inicio.toFixed(3), fim: +T[par[i]].fim.toFixed(3) } : null)).filter(Boolean);
+const final = saidaFrases.map((f, idx) => ({
+  texto: f.texto,
+  inicio: +f.inicio.toFixed(2),
+  fim: +f.fim.toFixed(2),
+  ...(f.estimada ? { estimada: true } : {}),
+  palavras: palavrasDaFrase(idx),
+}));
 writeFileSync(saida, JSON.stringify(final, null, 1));
 
 const naoAlinhadas = par.filter((j) => j < 0).length;

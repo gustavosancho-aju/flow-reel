@@ -306,13 +306,29 @@ o template (o padrão fornecido é `dividido`).
 - Confira as prévias (`snapshot`) antes de renderizar; o render leva alguns
   minutos, rode em segundo plano.
 
-## Passo 7: Voz (escolha guiada uma vez, depois automática)
+## Passo 7: Voz (padrão: fala por texto com sincronia labial por palavra)
 
 **Faça este passo ANTES do Passo 6**, sobre o `limpo.mp4`: os tempos da voz final guiam
 os motions e a legenda.
 
-**Se `perfil.voz.metodo` ainda não existe** (primeiro Reel, ou a pessoa reclamou da voz),
-rode o teste A/B uma vez:
+**Padrão: fala por texto.** O clone lê o roteiro (voz natural, no ritmo da pessoa, sem a
+gravidade da voz do Flow) e cada palavra é encaixada no instante em que o avatar mexe a
+boca para ela (`lib/sincronia.mjs`). Requisitos: `frases.json` gerado pelo `frases.mjs`
+(traz o tempo de cada palavra do avatar) e `GROQ_API_KEY` (tempo das palavras da voz nova).
+No Reel do Grok, o desvio médio entre a palavra falada e a boca caiu de 120ms (frase
+esticada inteira) para 33ms. Sem esses requisitos, cai no encaixe por frase (a boca bate
+só no começo e no fim). A troca de voz e a voz do Flow continuam disponíveis no A/B.
+
+```bash
+node scripts/gerar-voz.mjs limpo.mp4 frases.json voz.wav
+```
+
+O relatório (`voz-trabalho/texto.relatorio.json` e a saída do comando) mostra, por frase,
+o modo (palavra ou frase), as âncoras e o desvio antes e depois. Frases que só caberiam
+deformando a fala (comprimir/esticar fora de 0,8 a 1,35x) caem no encaixe por frase de
+propósito: é melhor a boca levemente fora do que a palavra embolada.
+
+**Só se a pessoa não gostar da voz** (ou quiser comparar), rode o teste A/B uma vez:
 
 ```bash
 node scripts/escolher-voz.mjs amostras limpo.mp4 frases.json      # ~6s do começo do Reel
@@ -326,21 +342,16 @@ transcrição. Custo típico: ~120 créditos (B) + ~100 (C); A e as variações 
 |---|---|---|
 | A | voz do Flow, sem troca | quando o clone não convence |
 | B / B+1 | troca de voz: o clone sobre a fala do avatar | boca mais sincronizada; herda ritmo e gravidade do avatar |
-| C / C+1 | fala por texto: o clone lendo o roteiro | voz mais natural e no ritmo da pessoa; boca bate só no começo e fim de cada frase |
+| C / C+1 | fala por texto (padrão): o clone lendo o roteiro | voz mais natural e no ritmo da pessoa; sincronia por palavra |
 
-Mande o `comparacao.mp4` para a pessoa e grave a escolha dela (pode pedir +2, +3...):
+Mande o `comparacao.mp4` para a pessoa e grave a escolha dela (pode pedir +2, +3...);
+dali em diante o `gerar-voz.mjs` usa o método gravado:
 
 ```bash
 node scripts/escolher-voz.mjs gravar C+1
 ```
 
-**Com a voz já escolhida**, cada Reel é um comando só:
-
-```bash
-node scripts/gerar-voz.mjs limpo.mp4 frases.json voz.wav
-```
-
-Ele aplica o método e o ajuste de tom do perfil e **confere frase a frase com dois
+O `gerar-voz.mjs` aplica o método e o ajuste de tom do perfil e **confere frase a frase com dois
 transcritores** (`lib/conferir.mjs`: "ok", "aviso" = só um transcritor discordou,
 provavelmente erro dele; "erro" = os dois ouvem diferente do roteiro). Sai com código 3
 se houver erro, listando as frases.
@@ -350,6 +361,11 @@ se houver erro, listando as frases.
   palavra engolida resolveu: "sendo, o humano") e rode de novo: só ela é regerada, o
   resto vem do cache (`voz-trabalho/texto.frases/`). Ou force com
   `node scripts/gerar-voz-tts.mjs frases.json voz-trabalho/texto.wav <duração> --refazer 11`.
+  O cache separa a fala gerada (custa crédito) do encaixe (grátis): mudar só a janela ou a
+  sincronia reencaixa as falas já aprovadas sem chamar o ElevenLabs.
+- **Na faixa montada, confira com a janela exata da frase.** A conferência isolada de cada
+  frase não vê problemas de montagem (foi assim que um trecho sobreposto virou "tung
+  direito"); o `gerar-voz.mjs` confere na faixa final por isso.
 - **Erro na troca de voz (B):** a troca copia defeitos do avatar e às vezes insere
   palavra ("comenta **a** automação"). Corte o defeito no `limpo.mp4` (Passo 4b) ou refaça
   a troca só do trecho e emende com `acrossfade` de 25ms.
@@ -364,11 +380,14 @@ se houver erro, listando as frases.
 Todo Reel sai acelerado em `velocidadeFinal` (padrão 1,1x) para ficar mais
 dinâmico. Aplique em vídeo e áudio juntos, no final:
 
-1. Legenda (de `estilo.legenda` e `estilo.fontes.legenda`):
+1. Legenda (de `estilo.legenda` e `estilo.fontes.legenda`). O texto vem do **roteiro** e só
+   os tempos vêm da voz final, então não é preciso remendar o que o transcritor escreveu
+   ("Grock", "R$ 150,00", um "a" inventado, um "os" engolido). Escreva no `roteiro.txt` do
+   jeito que quer ler na tela (ex.: "R$150"):
    ```bash
-   node scripts/timestamps-palavras.mjs voz16.mp3 palavras.json
-   # remova alucinações do Whisper (ex.: "Seventy-A") antes de gerar
-   node scripts/gerar-legenda.mjs palavras.json legenda.ass
+   node scripts/timestamps-palavras.mjs voz16.mp3 palavras_voz.json
+   node scripts/palavras-legenda.mjs roteiro.txt palavras_voz.json palavras_legenda.json
+   node scripts/gerar-legenda.mjs palavras_legenda.json legenda.ass
    node scripts/verificar-legenda.mjs legenda.ass video.mp4      # 0 sobreposições, 0 passando do fim
    ```
 2. Queime a legenda e acelere tudo de uma vez (a legenda é queimada **antes**

@@ -1,9 +1,11 @@
 /**
  * Gera a voz final do Reel com o método salvo no perfil (scripts/escolher-voz.mjs).
  *
- *   perfil.voz.metodo = "original" → mantém a voz do Flow
+ *   perfil.voz.metodo = "texto"    → PADRÃO: fala por texto (seu clone lendo o roteiro),
+ *                                    com sincronia labial por palavra (lib/sincronia.mjs)
  *                       "troca"    → troca de voz (seu clone sobre a fala do avatar)
- *                       "texto"    → fala por texto (seu clone lendo o roteiro)
+ *                       "original" → mantém a voz do Flow
+ *   Sem método no perfil: usa "texto" se houver chave do ElevenLabs; senão "original".
  *   perfil.voz.ajusteSemitons      → sobe/desce o tom no final (0 = sem ajuste)
  *
  * Depois confere frase a frase com dois transcritores e lista o que precisa refazer.
@@ -17,7 +19,7 @@ import { spawnSync } from "child_process";
 import { mkdirSync, writeFileSync } from "fs";
 import { readFileSync } from "fs";
 import { dirname, join, resolve } from "path";
-import { RAIZ, perfil } from "./lib/config.mjs";
+import { RAIZ, env, perfil } from "./lib/config.mjs";
 import { conferir } from "./lib/conferir.mjs";
 import { ff, duracao, fatorSemitons, WAV_MONO } from "./lib/midia.mjs";
 
@@ -27,12 +29,18 @@ if (!video || !frasesPath || !saida) {
   process.exit(1);
 }
 const voz = perfil.voz || {};
-const metodo = voz.metodo || (voz.trocarVoz === false ? "original" : null);
-if (!metodo) {
-  console.error("Ainda não há voz escolhida no perfil. Rode o teste A/B uma vez:\n  node scripts/escolher-voz.mjs amostras <limpo.mp4> <frases.json>\n  node scripts/escolher-voz.mjs gravar <ID>");
-  process.exit(2);
+const temClone = !!(env.ELEVENLABS_API_KEY && env[voz.voiceIdEnv || "ELEVENLABS_VOICE_ID"]);
+const metodo = voz.metodo || (voz.trocarVoz === false || !temClone ? "original" : "texto");
+if (!voz.metodo) {
+  console.log(`Sem voz escolhida no perfil: usando "${metodo}" (padrão). Para comparar opções: node scripts/escolher-voz.mjs amostras <limpo.mp4> <frases.json>`);
 }
 const frases = JSON.parse(readFileSync(frasesPath, "utf-8"));
+if (metodo === "texto" && !frases.some((f) => f.palavras?.length)) {
+  console.log("Aviso: frases.json sem tempos por palavra; a sincronia labial será só por frase. Gere com scripts/frases.mjs.");
+}
+if (metodo === "texto" && !env.GROQ_API_KEY) {
+  console.log("Aviso: sem GROQ_API_KEY a sincronia labial é só por frase (o tempo de cada palavra vem do Groq).");
+}
 const total = duracao(video);
 const trabalho = resolve(dirname(saida), "voz-trabalho");
 mkdirSync(trabalho, { recursive: true });
@@ -65,9 +73,10 @@ console.log("\nConferindo frase a frase...");
 const resultado = [];
 for (let i = 0; i < frases.length; i++) {
   const f = frases[i];
-  const ini = Math.max(0, f.inicio - 0.08);
+  // janela exata da frase: com folga o trecho pegava a vizinha e gerava avisos falsos
+  const ini = f.inicio;
   const trecho = T(`conf_${i + 1}.wav`);
-  ff(["-ss", String(ini), "-t", String(f.fim - ini + 0.12), "-i", saida, ...WAV_MONO, trecho]);
+  ff(["-ss", String(ini), "-t", String(f.fim - ini + 0.03), "-i", saida, ...WAV_MONO, trecho]);
   const c = await conferir(trecho, f.esperado || f.texto);
   resultado.push({ n: i + 1, texto: f.texto, veredito: c.veredito, ouvido: c.leituras.map((l) => `${l.transcritor}: ${l.texto}`) });
   const marca = c.veredito === "ok" ? "ok   " : c.veredito === "aviso" ? "AVISO" : "ERRO ";

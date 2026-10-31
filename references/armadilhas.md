@@ -351,3 +351,22 @@ descobrir. Ler antes de debugar do zero.
 - **Substituição de código pela linha de comando (`sed`, `node -e`) perde barra invertida** em
   regex e quebra em silêncio (`/\s+/` virou `/s+/`, `/\[nr]/` virou `/\[nr]/`). Edite com o
   editor, nunca por substituição de texto no shell.
+
+## Sincronia labial por palavra (31/10/2026)
+
+- **Trechos sobrepostos embolam a fala.** Na 1ª versão, cada trecho entre âncoras ia para a
+  posição absoluta; quando a compressão travava no limite (1,6x), o trecho invadia o seguinte e
+  os dois tocavam juntos ("com direito" virou "tung direito"). Agora os trechos entram em
+  sequência, nunca sobrepostos, e o fator fica entre 0,8 e 1,35x (fora disso a fala deforma:
+  "no mês" virou "por mês"). Frase que não cabe assim volta para o encaixe por frase.
+- **Conferência isolada não vê defeito de montagem.** Confira cada frase na faixa final, com a
+  janela exata (com folga, o trecho pega a vizinha e gera aviso falso).
+- **Groq limita 20 transcrições por minuto**; a sincronia usa ~3 por frase. `postComRetry` em
+  `lib/conferir.mjs` espera e tenta de novo.
+- **Nome de marca tem várias grafias no transcritor** ("Grok", "Grock", "Grog"): a comparação
+  aceita 1 letra de diferença em palavras de 4+ letras. Palavras curtas continuam exatas.
+- **"Comenta automação" é ouvido às vezes como "comenta a automação"**, até na voz original:
+  as vogais se fundem na fala. Só conta como erro se os dois transcritores ouvirem em
+  repetidas rodadas; na dúvida, escute.
+- **Legenda pelo roteiro, não pela transcrição** (`palavras-legenda.mjs`): remendar a
+  transcrição pelo shell quebrou de novo ("R$150" virou "R50").

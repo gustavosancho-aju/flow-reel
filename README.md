@@ -31,12 +31,27 @@ usa 84 créditos.
 Dentro do projeto onde você quer usar:
 
 ```bash
-git clone <url-deste-repositorio> .claude/skills/flow-reel
+git clone https://github.com/gustavosancho-aju/flow-reel.git .claude/skills/flow-reel
 cd .claude/skills/flow-reel
 cp .env.exemplo .env.local      # preencha só os módulos que for usar
 ```
 
 Para usar em todos os projetos, clone em `~/.claude/skills/flow-reel`.
+
+Se as suas chaves já estão no `.env.local` de outro projeto, não copie: depois do primeiro uso,
+coloque o caminho dele em `perfil/perfil.json`, no campo `envArquivo`.
+
+Para atualizar: `git pull` dentro da pasta do skill. Seu `perfil/` e seu `.env.local` não são
+versionados, então a atualização não mexe neles.
+
+**Se você mantém o repositório em outra pasta** (para editar e versionar), ligue o skill a ela em
+vez de clonar duas vezes. No Windows (PowerShell, sem precisar de administrador):
+
+```powershell
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.claude\skills\flow-reel" -Target "C:\caminho\do\flow-reel"
+```
+
+No macOS/Linux: `ln -s /caminho/do/flow-reel ~/.claude/skills/flow-reel`.
 
 ## Primeiro uso
 

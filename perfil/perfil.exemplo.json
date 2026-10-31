@@ -1,9 +1,14 @@
 {
   "_ajuda": "Dados de quem usa o skill. Copie para perfil/perfil.json (ou deixe o skill criar na primeira execução). Chaves de API NÃO ficam aqui: vão no .env (veja .env.exemplo).",
+  "envArquivo": null,
+  "_envArquivo": "Opcional: caminho para um .env.local que já existe em outro projeto (ex.: o do seu CRM). Assim as chaves não são copiadas para cá.",
   "nome": "Seu Nome",
   "idioma": "pt-BR",
   "nicho": "descreva em uma frase o público e o assunto dos seus Reels",
-  "avatar": { "nomeNoFlow": "Eu", "formato": "selfie" },
+  "avatar": {
+    "nomeNoFlow": "Eu",
+    "formato": "selfie"
+  },
   "cenario": "descrição fixa do cenário que o avatar usa em todas as cenas",
   "figurino": "descrição fixa da roupa que o avatar usa em todas as cenas",
   "voz": {
@@ -11,14 +16,20 @@
     "trocarVoz": true,
     "voiceIdEnv": "ELEVENLABS_VOICE_ID",
     "stability": 0.35,
-    "similarity": 1.0
+    "similarity": 1
   },
-  "fotos": { "fonte": "pasta", "pasta": "perfil/fotos" },
+  "fotos": {
+    "fonte": "pasta",
+    "pasta": "perfil/fotos"
+  },
   "publicacao": {
     "instagram": true,
     "linkedin": false,
     "exigirOrdemExplicita": true
   },
-  "baixaNoCrm": { "ativo": false, "descricao": "ex.: marcar o item do planejamento como postado depois de publicar" },
+  "baixaNoCrm": {
+    "ativo": false,
+    "descricao": "ex.: marcar o item do planejamento como postado depois de publicar"
+  },
   "velocidadeFinal": 1.1
 }

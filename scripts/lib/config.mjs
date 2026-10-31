@@ -1,9 +1,10 @@
 /**
  * Configuração central do flow-reel.
  *
- * - env: variáveis de ambiente (chaves de API). Procura, nesta ordem:
- *   $FLOW_REEL_ENV, ./.env.local, ./.env (pasta de trabalho), <repo>/.env.local, <repo>/.env
- *   e depois process.env. Nunca imprime valores.
+ * - env: variáveis de ambiente (chaves de API). Procura, da maior para a menor prioridade:
+ *   $FLOW_REEL_ENV, perfil.envArquivo (caminho para um .env que já existe em outro projeto,
+ *   sem copiar segredo), ./.env.local, ./.env (pasta de trabalho), <repo>/.env.local,
+ *   <repo>/.env e depois process.env. Nunca imprime valores.
  * - perfil: dados de quem usa (avatar, voz, publicação). perfil/perfil.json
  * - estilo: identidade visual extraída dos vídeos de referência. perfil/estilo.json
  *   Se um dos dois não existir, cai no arquivo .exemplo.json (neutro).
@@ -25,15 +26,16 @@ function lerEnv(caminho) {
       .slice(i + 1)
       .trim()
       .replace(/^["']|["']$/g, "")
-      .replace(/\[nr]/g, "")
+      .replace(/\\[nr]/g, "") // "\n" literal que o `vercel env pull` deixa no fim do valor
       .trim();
   }
   return out;
 }
 
-function carregarEnv() {
+function carregarEnv(envArquivo) {
   const candidatos = [
     process.env.FLOW_REEL_ENV,
+    envArquivo,
     resolve(process.cwd(), ".env.local"),
     resolve(process.cwd(), ".env"),
     resolve(RAIZ, ".env.local"),
@@ -53,9 +55,9 @@ function lerJson(nome) {
   throw new Error(`perfil/${nome}.json (nem .exemplo.json) não encontrado em ${RAIZ}`);
 }
 
-export const env = carregarEnv();
 const P = lerJson("perfil");
 const E = lerJson("estilo");
+export const env = carregarEnv(P.exemplo ? null : P.dados.envArquivo);
 export const perfil = P.dados;
 export const estilo = E.dados;
 export const usandoExemplo = { perfil: P.exemplo, estilo: E.exemplo };

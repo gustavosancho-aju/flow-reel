@@ -33,12 +33,27 @@ usa 84 créditos. O modo gravado não consome créditos do Flow.
 Dentro do projeto onde você quer usar:
 
 ```bash
-git clone <url-deste-repositorio> .claude/skills/flow-reel
+git clone https://github.com/gustavosancho-aju/flow-reel.git .claude/skills/flow-reel
 cd .claude/skills/flow-reel
 cp .env.exemplo .env.local      # preencha só os módulos que for usar
 ```
 
 Para usar em todos os projetos, clone em `~/.claude/skills/flow-reel`.
+
+Configure as chaves no `.env.local` da raiz do flow-reel. O antigo campo
+`perfil.envArquivo` é ignorado: arquivos de ambiente externos não são carregados.
+
+Para atualizar: `git pull` dentro da pasta do skill. Seu `perfil/` e seu `.env.local` não são
+versionados, então a atualização não mexe neles.
+
+**Se você mantém o repositório em outra pasta** (para editar e versionar), ligue o skill a ela em
+vez de clonar duas vezes. No Windows (PowerShell, sem precisar de administrador):
+
+```powershell
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.claude\skills\flow-reel" -Target "C:\caminho\do\flow-reel"
+```
+
+No macOS/Linux: `ln -s /caminho/do/flow-reel ~/.claude/skills/flow-reel`.
 
 ## Primeiro uso
 
@@ -53,7 +68,7 @@ Como ainda não existe `perfil/estilo.json`, o skill faz o onboarding:
    cores, o ritmo de cortes (`scripts/extrair-estilo.mjs`).
 3. **Lê os quadros** e propõe: cores, fontes (e **pergunta o nome e o arquivo exato**,
    porque fonte não se adivinha pela imagem), estilo de legenda, layout e elementos.
-4. **Mostra uma prévia** e só segue com a sua aprovação.
+4. **Mostra uma cartela de estilo** (cores, fontes, legenda, pílulas e cartões, sem precisar de vídeo) e só segue com a sua aprovação.
 5. **Pergunta o resto do perfil**: nome, nicho, nome do avatar no Flow, cenário e
    figurino fixos, voz, destinos de publicação. No modo gravado, não pede os dados
    do Flow e mantém a voz original por padrão.
@@ -70,15 +85,20 @@ Reel pula direto para o roteiro. Para vídeo gravado, valide com
 | 1 | Roteiro (se você não trouxe pronto) | |
 | 2 | Gera as cenas no Flow e baixa | (Chrome) |
 | 3 | Confere cada cena, monta base e folha de contato | `transcrever-openai.mjs` |
-| 4 | Corta silêncio e **retranscreve** para caçar repetições e erros do avatar | `cortar-silencio.mjs` ou `cortar-video.mjs`, `timestamps-palavras.mjs` |
+| 4 | Corta silêncio, **retranscreve** para caçar repetições e erros do avatar e alinha o roteiro com os tempos | `cortar-silencio.mjs` ou `cortar-video.mjs`, `timestamps-palavras.mjs`, `frases.mjs` |
 | 5 | Mantém o **fundo original** (fundo único só se você pedir) | `gerar-fundo.mjs` (opcional) |
-| 7 | Troca pela sua voz (opcional) | `trocar-voz-elevenlabs.mjs` |
+| 7 | Voz: fala por texto com a sua voz clonada e **sincronia labial por palavra** (padrão), conferida frase a frase; teste A/B opcional com troca de voz e voz do Flow | `gerar-voz.mjs`, `escolher-voz.mjs` |
 | 6 | Edita com motions no seu estilo | `aplicar-estilo-template.mjs`, HyperFrames |
-| 8 | Legenda e montagem final em 1,1x, com conferência da fala | `gerar-legenda.mjs`, `verificar-legenda.mjs` |
+| 8 | Legenda com o texto do roteiro e os tempos da voz, montagem final na velocidade do perfil e conferência da fala | `palavras-legenda.mjs`, `gerar-legenda.mjs`, `verificar-legenda.mjs` |
 | 9 | Capa e legenda do post | `gerar-capa.mjs` |
 | 10 | Publica (só com a sua ordem) | `upload-supabase.mjs`, `publicar-instagram.mjs`, `publicar-linkedin-video.mjs` |
 
 O Passo 7 vem antes do 6 de propósito: os tempos da voz final guiam os motions.
+
+O comando legado `node scripts/aplicar-estilo-template.mjs edicao/index.html camadas`
+continua disponível para avatar em 9:16. Também aceita `dividido`; formato, modo e
+layout podem ser passados em qualquer ordem. O layout em camadas exige o recorte
+`pessoa.webm`; para vídeo gravado ou 16:9, use o layout dividido.
 
 ## Modo vídeo gravado
 
@@ -170,7 +190,7 @@ alternativa, repita com `ffmpeg`. [Opções utilizadas](https://auto-editor.com/
 Copie `.env.exemplo` para **`.env.local` na raiz do próprio flow-reel**. Os scripts
 leem somente `<flow-reel>/.env.local` e `<flow-reel>/.env`, nessa prioridade;
 `process.env` fornece valores para nomes ausentes nesses arquivos. Arquivos da
-pasta onde o comando é executado e `FLOW_REEL_ENV` são ignorados. Arquivos `.env`
+pasta onde o comando é executado, `FLOW_REEL_ENV` e `perfil.envArquivo` são ignorados. Arquivos `.env`
 não interpretam expressões de shell; coloque cada valor em uma linha, sem comentários
 na mesma linha. Não cole credenciais na conversa.
 
@@ -178,7 +198,7 @@ na mesma linha. Não cole credenciais na conversa.
 |---|---|
 | `OPENAI_API_KEY` | `transcrever-openai.mjs`: confere a fala com OpenAI |
 | `GROQ_API_KEY` | `timestamps-palavras.mjs`: timestamps por palavra com Groq |
-| `ELEVENLABS_API_KEY` | Troca de voz opcional; permissão Speech to Speech |
+| `ELEVENLABS_API_KEY` | Voz clonada opcional: Text to Speech no modo texto, Speech to Speech no modo troca |
 | `ELEVENLABS_VOICE_ID` | ID da voz; o nome da variável pode ser alterado em `perfil.voz.voiceIdEnv` |
 | `OPENROUTER_API_KEY` | Geração opcional de fundo único |
 | `META_ACCESS_TOKEN` | Publicação de Reels pela API do Instagram |

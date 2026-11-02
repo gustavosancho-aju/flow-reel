@@ -23,7 +23,7 @@ function fixture(t, { gravado = false, refs = 4, aprovado = false } = {}) {
 
 test("primeiro uso lista os dois arquivos faltantes", (t) => {
   const { raiz } = fixture(t);
-  assert.deepEqual(validarPerfil(raiz), { pronto: false, primeiroUso: true, faltando: ["perfil/perfil.json", "perfil/estilo.json"] });
+  assert.deepEqual(validarPerfil(raiz), { pronto: false, primeiroUso: true, faltando: ["perfil/perfil.json", "perfil/estilo.json"], avisos: [] });
 });
 test("avatar configurado fica pronto e placeholder é rejeitado", (t) => {
   const f = fixture(t); f.salvar();
@@ -36,6 +36,8 @@ test("gravado dispensa campos do Flow sem relaxar o avatar", (t) => {
   assert.equal(validarPerfil(f.raiz, "gravado").pronto, true);
   assert.deepEqual(validarPerfil(f.raiz).faltando, ["perfil.avatar", "perfil.cenario", "perfil.figurino"]);
   assert.throws(() => validarPerfil(f.raiz, "outro"), /Modo inválido/);
+  assert.ok(validarPerfil(f.raiz).avisos.some((aviso) => aviso.includes("voz não definida")));
+  assert.ok(!validarPerfil(f.raiz, "gravado").avisos.some((aviso) => aviso.includes("voz não definida")));
 });
 test("exige quatro referências ou aprovação registrada", (t) => {
   const f = fixture(t, { refs: 2 }); f.salvar();

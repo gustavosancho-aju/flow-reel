@@ -314,3 +314,59 @@ descobrir. Ler antes de debugar do zero.
   sistema (link e horário da publicação) e **não crie um registro paralelo**, que
   duplica. Confirme no sistema que o status mudou. Configure o destino em
   `perfil.baixaNoCrm`.
+
+## Reel em camadas e voz (21/10/2026)
+
+- **Arquivos de ambiente:** só a raiz do flow-reel fornece `.env.local`/`.env`.
+  `FLOW_REEL_ENV` e `perfil.envArquivo` são ignorados, assim como arquivos da pasta de execução.
+- **Microfone no peito do avatar:** em 3 de 6 cenas apareceu um microfone verde (vem da referência do avatar).
+  Regere essas cenas com "Não há nenhum microfone nem objeto na frente do peito dele".
+- **Chip do Flow no projeto novo:** pode vir 16:9, 10s e x4 (60 créditos). Conferir e ajustar para 9:16, 8s, x1 antes da 1ª cena.
+- **Transcritores divergem:** o Groq inseriu "a" em "comenta a automação" mesmo no áudio ORIGINAL. Confirme com o
+  OpenAI antes de gastar créditos refazendo voz.
+- **Valores falados:** o Whisper escreve "cento e cinquenta reais" como "R$ 150,00" em dois tokens. Antes de gerar a
+  legenda, junte em "R$150" e troque "Grock/Groq" por "Grok" num `palavras_legenda.json` separado.
+- **`aplicar-estilo-template.mjs` falhava ao reaplicar** por a fonte do sistema vir somente leitura; o script agora apaga o destino antes de copiar.
+- **Voz grave e pausada após a troca (21/10/2026):** a troca de voz mantém o ritmo e a gravidade da voz sintética do Flow
+  (o clone tinha só 2 amostras). Saídas: 1,2x com `rubberband` +1 a +3 semitons, ou `gerar-voz-tts.mjs` (fala por texto).
+- **Fala por texto engole artigos curtos** ("o" em "sendo o humano") e pode trocar palavras ("com direito a" virou
+  "empreguei pra"). Dois transcritores concordando é a prova; um só pode errar. Frase só passa se a conferência feita
+  DEPOIS do encaixe (`atempo`) ainda ouvir o texto certo, porque esticar o áudio pode apagar a palavra.
+- **Variante que acerta pode trazer palavra a mais** ("..., tá?"): cortar no fim da última palavra do roteiro antes de usar.
+- **Regex em string de template perde a barra invertida** ao gerar scripts por substituição de texto (`/s+/` virou `/s+/` e
+  quebrou a comparação). Sempre rodar um teste mínimo do conferidor com um texto conhecido.
+
+## Onboarding e cartela (31/10/2026)
+
+- **Cor de destaque medida errada:** a média por quantização puxava o neon para o tom do
+  brilho difuso (`#04843C` em vez de `#00FF66`) e deixava passar tom de pele. O
+  `extrair-estilo.mjs` agora só considera pixels saturados e claros, agrupa por matiz e
+  mede a cor nos pixels mais brilhantes; o consenso entre vídeos acertou `#07F364` em 3 de 4.
+  O hex exato da marca não sobrevive à compressão: confirme com a pessoa.
+- **Reel com música da biblioteca do Instagram não tem `media_url`** na API; use outro.
+- **`drawtext` com `textfile`:** sem `expansion=none`, um `%` no texto faz a linha inteira
+  sumir sem erro; uma quebra de linha no arquivo vira um quadradinho. Uma linha por `drawtext`.
+- **Fonte copiada duas vezes dá `EPERM`** (a fonte instalada no Windows vem somente leitura e a
+  cópia herda isso). Use `copiarFonte()` de `lib/midia.mjs` em qualquer script novo.
+- **Substituição de código pela linha de comando (`sed`, `node -e`) perde barra invertida** em
+  regex e quebra em silêncio (`/\s+/` virou `/s+/`, `/\[nr]/` virou `/\[nr]/`). Edite com o
+  editor, nunca por substituição de texto no shell.
+
+## Sincronia labial por palavra (31/10/2026)
+
+- **Trechos sobrepostos embolam a fala.** Na 1ª versão, cada trecho entre âncoras ia para a
+  posição absoluta; quando a compressão travava no limite (1,6x), o trecho invadia o seguinte e
+  os dois tocavam juntos ("com direito" virou "tung direito"). Agora os trechos entram em
+  sequência, nunca sobrepostos, e o fator fica entre 0,8 e 1,35x (fora disso a fala deforma:
+  "no mês" virou "por mês"). Frase que não cabe assim volta para o encaixe por frase.
+- **Conferência isolada não vê defeito de montagem.** Confira cada frase na faixa final, com a
+  janela exata (com folga, o trecho pega a vizinha e gera aviso falso).
+- **Groq limita 20 transcrições por minuto**; a sincronia usa ~3 por frase. `postComRetry` em
+  `lib/conferir.mjs` espera e tenta de novo.
+- **Nome de marca tem várias grafias no transcritor** ("Grok", "Grock", "Grog"): a comparação
+  aceita 1 letra de diferença em palavras de 4+ letras. Palavras curtas continuam exatas.
+- **"Comenta automação" é ouvido às vezes como "comenta a automação"**, até na voz original:
+  as vogais se fundem na fala. Só conta como erro se os dois transcritores ouvirem em
+  repetidas rodadas; na dúvida, escute.
+- **Legenda pelo roteiro, não pela transcrição** (`palavras-legenda.mjs`): remendar a
+  transcrição pelo shell quebrou de novo ("R$150" virou "R50").

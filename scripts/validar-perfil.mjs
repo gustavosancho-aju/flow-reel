@@ -37,8 +37,16 @@ export function validarPerfil(raiz = RAIZ, modo = "avatar") {
     }
   }
 
+  // Decisões informativas não bloqueiam o onboarding nem exigem voz clonada no gravado.
+  const avisos = [];
+  if (modo === "avatar" && perfil && !perfil.voz?.metodo && perfil.voz?.trocarVoz !== false) {
+    avisos.push("voz não definida no perfil: o Passo 7 usará a fala por texto (padrão); para comparar opções, scripts/escolher-voz.mjs");
+  }
+  if (perfil && !existsSync(resolve(raiz, ".env.local")) && !existsSync(resolve(raiz, ".env"))) {
+    avisos.push("nenhum .env encontrado no repositório: crie .env.local na raiz do flow-reel (veja .env.exemplo); variáveis de processo também podem ser usadas");
+  }
   const primeiroUso = !perfil && !estilo;
-  return { pronto: faltando.length === 0, primeiroUso, faltando };
+  return { pronto: faltando.length === 0, primeiroUso, faltando, avisos };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

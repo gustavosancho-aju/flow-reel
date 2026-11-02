@@ -25,7 +25,7 @@ function lerEnv(caminho) {
       .slice(i + 1)
       .trim()
       .replace(/^["']|["']$/g, "")
-      .replace(/\[nr]/g, "")
+      .replace(/\\[nr]/g, "") // "\n" literal que o `vercel env pull` deixa no fim do valor
       .trim();
   }
   return out;
@@ -50,9 +50,9 @@ function lerJson(nome) {
   throw new Error(`perfil/${nome}.json (nem .exemplo.json) não encontrado em ${RAIZ}`);
 }
 
-export const env = carregarEnv();
 const P = lerJson("perfil");
 const E = lerJson("estilo");
+export const env = carregarEnv();
 export const perfil = P.dados;
 export const estilo = E.dados;
 export const usandoExemplo = { perfil: P.exemplo, estilo: E.exemplo };

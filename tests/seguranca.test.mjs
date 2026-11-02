@@ -50,12 +50,13 @@ test("erro de upload não assina URL nem expõe resposta remota", async (t) => {
 test("rejeita traversal antes de enviar mídia", async () => {
   await assert.rejects(uploadSupabase("ausente.mp4", "../escape.mp4", "video/mp4", config), /Caminho/);
 });
-test("config lê apenas env da raiz, ignora cwd e FLOW_REEL_ENV", (t) => {
+test("config lê apenas env da raiz, ignora cwd, FLOW_REEL_ENV e perfil.envArquivo", (t) => {
   const dir = temp(t), raiz = join(dir, "repo");
   mkdirSync(join(raiz, "scripts/lib"), { recursive: true }); mkdirSync(join(raiz, "perfil"));
   for (const nome of ["config.mjs", "raiz.mjs"]) copyFileSync(new URL(`../scripts/lib/${nome}`, import.meta.url), join(raiz, "scripts/lib", nome));
   for (const nome of ["perfil", "estilo"]) writeFileSync(join(raiz, `perfil/${nome}.exemplo.json`), "{}");
   writeFileSync(join(dir, ".env.local"), "FLOW_REEL_TEST_ENV=foreign\nFLOW_REEL_TEST_FOREIGN=leaked");
+  writeFileSync(join(raiz, "perfil/perfil.json"), JSON.stringify({ envArquivo: join(dir, ".env.local") }));
   writeFileSync(join(raiz, ".env"), "FLOW_REEL_TEST_ENV=repo");
   writeFileSync(join(raiz, ".env.local"), "FLOW_REEL_TEST_ENV=local");
   const script = `import {env} from ${JSON.stringify(pathToFileURL(join(raiz, "scripts/lib/config.mjs")).href)}; console.log(JSON.stringify({chosen:env.FLOW_REEL_TEST_ENV,foreign:env.FLOW_REEL_TEST_FOREIGN}));`;

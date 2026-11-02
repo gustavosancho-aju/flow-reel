@@ -53,16 +53,33 @@ function baixarSeUrl(e, destino) {
 /** Paleta dominante: quantiza cada pixel de quadros pequenos em baldes de 5 bits e conta. */
 function paleta(arq, dur) {
   const baldes = new Map();
-  const N = 10;
+  // cores VIVAS (candidatas a cor de destaque da marca), agrupadas por matiz de 10 em 10 graus.
+  // A média por quantização puxava o neon para o tom do brilho difuso (#04843C em vez de #00FF66)
+  // e deixava passar tom de pele; aqui só entram pixels saturados E claros, e a cor de cada
+  // grupo é medida nos pixels mais brilhantes dele.
+  const vivas = Array.from({ length: 36 }, () => ({ n: 0, nb: 0, r: 0, g: 0, b: 0 }));
+  let pixels = 0;
+  const N = 16;
   for (let i = 0; i < N; i++) {
     const t = ((i + 0.5) / N) * dur;
-    const r = run("ffmpeg", ["-v", "error", "-ss", String(t), "-i", arq, "-frames:v", "1", "-vf", "scale=54:96", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], { binary: true });
+    const r = run("ffmpeg", ["-v", "error", "-ss", String(t), "-i", arq, "-frames:v", "1", "-vf", "scale=108:192", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], { binary: true });
     if (r.status !== 0 || !r.stdout?.length) continue;
     const b = r.stdout;
     for (let p = 0; p + 2 < b.length; p += 3) {
-      const R = b[p] >> 3, G = b[p + 1] >> 3, B = b[p + 2] >> 3;
+      const r8 = b[p], g8 = b[p + 1], b8 = b[p + 2];
+      pixels++;
+      const R = r8 >> 3, G = g8 >> 3, B = b8 >> 3;
       const k = (R << 10) | (G << 5) | B;
       baldes.set(k, (baldes.get(k) || 0) + 1);
+      const mx = Math.max(r8, g8, b8), mn = Math.min(r8, g8, b8);
+      const v = mx / 255, s = mx ? (mx - mn) / mx : 0;
+      if (s < 0.55 || v < 0.55) continue;
+      const d = mx - mn;
+      let h = mx === r8 ? ((g8 - b8) / d) % 6 : mx === g8 ? (b8 - r8) / d + 2 : (r8 - g8) / d + 4;
+      h = (h * 60 + 360) % 360;
+      const grupo = vivas[Math.floor(h / 10) % 36];
+      grupo.n++;
+      if (v >= 0.8 && s >= 0.7) { grupo.nb++; grupo.r += r8; grupo.g += g8; grupo.b += b8; }
     }
   }
   const total = [...baldes.values()].reduce((a, b) => a + b, 0) || 1;
@@ -79,8 +96,11 @@ function paleta(arq, dur) {
   }
   const hex = (c) => "#" + [c.R, c.G, c.B].map((v) => Math.min(255, v).toString(16).padStart(2, "0")).join("").toUpperCase();
   const base = out.sort((a, b) => b.n - a.n).slice(0, 6).map((c) => ({ hex: hex(c), pct: Math.round((c.n / total) * 1000) / 10, saturada: c.sat > 60 }));
-  const destaque = out.filter((c) => c.sat > 90).sort((a, b) => b.n - a.n)[0];
-  return { dominantes: base, candidataDestaque: destaque ? hex(destaque) : null };
+  const grupos = vivas
+    .map((g, i) => ({ matiz: i * 10 + 5, pct: Math.round((g.n / (pixels || 1)) * 10000) / 100, hex: g.nb ? hex({ R: Math.round(g.r / g.nb), G: Math.round(g.g / g.nb), B: Math.round(g.b / g.nb) }) : null }))
+    .filter((g) => g.pct >= 0.2 && g.hex)
+    .sort((a, b) => b.pct - a.pct);
+  return { dominantes: base, vivas: grupos.slice(0, 4), candidataDestaque: grupos[0]?.hex ?? null };
 }
 
 function cortes(arq, dur) {
@@ -137,8 +157,24 @@ analise.videos.forEach((v) => v.cores.dominantes.forEach((c) => {
   cur.videos.add(v.id);
   contagem.set(chave, cur);
 }));
+// destaque por consenso: o matiz vivo que aparece em mais vídeos (vizinhos de ±10° somam)
+const porMatiz = new Map();
+analise.videos.forEach((v) => (v.cores.vivas || []).forEach((g) => {
+  const chave = [...porMatiz.keys()].find((m) => Math.min(Math.abs(m - g.matiz), 360 - Math.abs(m - g.matiz)) <= 10) ?? g.matiz;
+  const cur = porMatiz.get(chave) || { videos: new Set(), pct: 0, amostras: [] };
+  cur.videos.add(v.id);
+  cur.pct += g.pct;
+  cur.amostras.push(g.hex);
+  porMatiz.set(chave, cur);
+}));
+const destaques = [...porMatiz.entries()]
+  .map(([matiz, v]) => ({ matiz, emVideos: v.videos.size, pctSomado: Math.round(v.pct * 100) / 100, hex: v.amostras.sort((a, b) => parseInt(b.slice(1), 16) - parseInt(a.slice(1), 16))[0], variantes: [...new Set(v.amostras)] }))
+  .sort((a, b) => b.emVideos - a.emVideos || b.pctSomado - a.pctSomado);
+
 analise.resumo = {
   cortesPorMinutoMedia: Math.round((analise.videos.reduce((a, v) => a + v.cortes.porMinuto, 0) / analise.videos.length) * 10) / 10,
+  destaqueConsenso: destaques[0] ? { hex: destaques[0].hex, emVideos: destaques[0].emVideos, de: analise.videos.length, variantes: destaques[0].variantes } : null,
+  outrasCoresVivas: destaques.slice(1, 4).map(({ hex, emVideos }) => ({ hex, emVideos })),
   coresQueSeRepetem: [...contagem.entries()].filter(([, v]) => v.videos.size >= 2).map(([hex, v]) => ({ hex, emVideos: v.videos.size, saturada: v.saturada })),
 };
 writeFileSync(resolve(baseDir, "analise.json"), JSON.stringify(analise, null, 2));

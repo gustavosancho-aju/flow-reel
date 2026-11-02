@@ -46,7 +46,10 @@ A saída é um JSON (`pronto`, `primeiroUso`, `faltando`).
 
 ### Onboarding (só na primeira vez, ou quando `faltando` listar itens)
 
-**Etapa A: pedir 4 vídeos de referência.** Diga à pessoa, em uma mensagem:
+**Etapa A: pedir 4 vídeos de referência.** Se a pessoa quiser usar Reels que ela mesma
+já publicou, dá para baixar pela API do Instagram (`GET /{media-id}?fields=media_url`);
+Reels com música da biblioteca do Instagram vêm **sem `media_url`**, então escolha outros.
+Diga à pessoa, em uma mensagem:
 
 > Para o seu Reel sair com a sua cara, preciso de **4 vídeos de referência** de
 > edição que você gosta (Reels seus ou de outras contas). Mande 4 caminhos de
@@ -92,15 +95,18 @@ Regras:
 4. Copie `perfil/estilo.exemplo.json` para `perfil/estilo.json` e preencha. Mantenha
    `origem.videosReferencia` com os 4 nomes e `origem.extraidoEm` com a data.
 
-**Etapa D: confirmar o estilo com a pessoa (obrigatório).** Mostre um resumo de uma
-tela (cores com hex, fontes, legenda, layout, elementos, ritmo) e, para ver na
-prática, gere a prévia:
+**Etapa D: confirmar o estilo com a pessoa (obrigatório).** Gere a cartela de estilo
+(funciona sem nenhum vídeo: cores com hex, título, pílulas, cartão, amostra de legenda,
+layout, ritmo e elementos) e mande a imagem para ela:
 
 ```bash
-node scripts/aplicar-estilo-template.mjs perfil/previa/index.html
+node scripts/cartela-estilo.mjs perfil/cartela.png
 ```
 
-Só siga com a aprovação dela. Ajustes pedidos voltam para o `estilo.json`.
+Leia a cartela antes de mandar (texto cortado, fonte errada caindo em Arial). Só siga
+com a aprovação dela; ajustes voltam para o `estilo.json` e a cartela é refeita. A
+prévia animada do template (`aplicar-estilo-template.mjs`) só faz sentido no primeiro
+Reel, quando já existe vídeo para pôr nela.
 
 **Etapa E: perfil da pessoa.** Copie `perfil/perfil.exemplo.json` para
 `perfil/perfil.json` e preencha, perguntando só o que falta:
@@ -273,6 +279,23 @@ node -e "const p=require('./palavras.json');console.log(p.map(w=>w.texto+' '+w.i
    aprovados: remova repetições sem mudar o sentido; peça nova gravação se necessário.
 4. Repita a retranscrição **uma última vez no vídeo final** (Passo 8).
 
+### 4c. Frases com tempo (base da voz e da conferência)
+
+Esta etapa é do modo **avatar**. No **gravado**, mantenha a transcrição conferida
+do vídeo limpo como referência para motions e legenda e pule a geração de voz.
+
+Salve as falas exatas do roteiro em `roteiro.txt` (uma cena por linha) e alinhe com
+os tempos da transcrição do `limpo.mp4`:
+
+```bash
+node scripts/frases.mjs roteiro.txt palavras.json frases.json
+```
+
+O texto de cada frase vem do **roteiro** (não da transcrição, que escreve "R$ 150"
+onde se falou "cento e cinquenta reais" e "Grock" onde é "Grok"); da transcrição só
+vêm os tempos. Frases marcadas `(estimada)` não tiveram nenhuma palavra reconhecida:
+confira a janela delas.
+
 ## Passo 5: Fundo: manter o original (padrão)
 
 **Padrão: mantenha o fundo original de cada cena. Não rode remoção de fundo.**
@@ -313,6 +336,17 @@ npx hyperframes check && npx hyperframes snapshot --at <tempos>
 npx hyperframes render --output renders/motion.mp4
 ```
 
+**Layout em camadas (rosto em tela cheia, sem tela dividida):** quando a pessoa pedir "sem tela
+dividida" ou "elementos atrás do rosto", use `node scripts/aplicar-estilo-template.mjs edicao/index.html camadas`
+(template `assets/edicao-camadas.html`). Camadas, de baixo para cima: vídeo original, fundo preto,
+elementos ATRÁS, **pessoa recortada** (`pessoa.webm`, gerado por `npx hyperframes remove-background limpo.mp4
+-o pessoa.webm --quality=balanced`, ~10 min para 30s em CPU, rode em segundo plano logo depois do
+Passo 4b), elementos NA FRENTE. Os blocos alternam **fundo original** e **fundo preto** a cada virada de
+fala. Este é o caso em que o recorte é permitido, porque o pedido exige elementos atrás da pessoa.
+Regras aprendidas: textos gigantes atrás ficam **na faixa acima da cabeça** (no centro o rosto os esconde:
+"G..K", "R..SO"); texto só com contorno precisa de preenchimento leve (`rgba(destaque,0.10)`) senão o
+`check` acusa "text_not_painted"; sobre o fundo original claro, escureça com `#dim` para o verde ter contraste.
+
 Depois de aplicar o template, **reescreva os painéis** com o conteúdo do Reel, mas
 respeite `estilo.layout` e `estilo.elementos` (se o estilo não tem checklist, não
 use checklist). Se `estilo.layout.tipo` for `tela-cheia` ou `pessoa-no-canto`, adapte
@@ -343,51 +377,106 @@ o template (o padrão fornecido é `dividido`).
 - Confira as prévias (`snapshot`) antes de renderizar; o render leva alguns
   minutos, rode em segundo plano.
 
-## Passo 7: Voz clonada (módulo opcional, `perfil.voz.trocarVoz`)
+## Passo 7: Voz (padrão: fala por texto com sincronia labial por palavra)
 
-Pule se a pessoa não usa voz clonada. **Faça este passo ANTES do Passo 6**, sobre o
-`limpo.mp4` (sem repetições): os tempos de `palavras.json` vêm da voz final e os
-motions ficam sincronizados; a troca de voz preserva o tempo da fala.
+No modo **gravado**, pule este passo e mantenha a voz original. Só gere ou troque
+a voz quando a pessoa pedir explicitamente; o método de voz do perfil do avatar
+não se aplica automaticamente a depoimentos e visitas gravadas.
+
+**Faça este passo ANTES do Passo 6**, sobre o `limpo.mp4`: os tempos da voz final guiam
+os motions e a legenda.
+
+**Padrão: fala por texto.** O clone lê o roteiro (voz natural, no ritmo da pessoa, sem a
+gravidade da voz do Flow) e cada palavra é encaixada no instante em que o avatar mexe a
+boca para ela (`lib/sincronia.mjs`). Requisitos: `frases.json` gerado pelo `frases.mjs`
+(traz o tempo de cada palavra do avatar) e `GROQ_API_KEY` (tempo das palavras da voz nova).
+No Reel do Grok, o desvio médio entre a palavra falada e a boca caiu de 120ms (frase
+esticada inteira) para 33ms. Sem esses requisitos, cai no encaixe por frase (a boca bate
+só no começo e no fim). A troca de voz e a voz do Flow continuam disponíveis no A/B.
 
 ```bash
-ffmpeg -i limpo.mp4 -vn -ac 1 -ar 44100 -acodec pcm_s16le voz.wav
-node scripts/trocar-voz-elevenlabs.mjs voz.wav voz_eleven.mp3     # usa stability/similarity de perfil.voz
-ffmpeg -y -v error -i voz_eleven.mp3 -ac 1 -ar 16000 voz16.mp3
-node scripts/timestamps-palavras.mjs voz16.mp3 palavras.json      # retranscrever a voz trocada
+node scripts/gerar-voz.mjs limpo.mp4 frases.json voz.wav
 ```
 
-Monte o `audio.wav` (`gerar-sfx.mjs cues.json voz.wav audio.wav`, com a voz trocada
-em WAV) e siga para o Passo 6.
+O relatório (`voz-trabalho/texto.relatorio.json` e a saída do comando) mostra, por frase,
+o modo (palavra ou frase), as âncoras e o desvio antes e depois. Frases que só caberiam
+deformando a fala (comprimir/esticar fora de 0,8 a 1,35x) caem no encaixe por frase de
+propósito: é melhor a boca levemente fora do que a palavra embolada.
 
-- Padrão validado: **similarity 1.0, stability 0.35**, remoção de ruído ligada.
-  Mantém o tempo da fala (boca sincronizada). ~705 créditos para 42s.
-- A troca de voz **copia defeitos do áudio do avatar** (sons sem sentido, palavras
-  repetidas). Se a retranscrição achar algum que escapou do Passo 4b, ache o ponto
-  com `silencedetect` + transcrição de pedaços curtos, corte vídeo e áudio juntos e
-  refaça a troca.
-- Alternativa testada e preterida: gerar a fala do zero com `eleven_v4` (texto para
-  voz) e encaixar frase por frase. Soa natural, mas a boca só bate no começo e no
-  fim de cada frase.
+**Só se a pessoa não gostar da voz** (ou quiser comparar), rode o teste A/B uma vez:
+
+```bash
+node scripts/escolher-voz.mjs amostras limpo.mp4 frases.json      # ~6s do começo do Reel
+```
+
+Ele monta `amostras-voz/comparacao.mp4`: o mesmo trecho tocando cada opção em sequência,
+com etiqueta na tela e já na velocidade final do perfil. Cada opção é conferida por
+transcrição. Custo típico: ~120 créditos (B) + ~100 (C); A e as variações de tom são grátis.
+
+| Opção | O que é | Quando costuma ganhar |
+|---|---|---|
+| A | voz do Flow, sem troca | quando o clone não convence |
+| B / B+1 | troca de voz: o clone sobre a fala do avatar | boca mais sincronizada; herda ritmo e gravidade do avatar |
+| C / C+1 | fala por texto (padrão): o clone lendo o roteiro | voz mais natural e no ritmo da pessoa; sincronia por palavra |
+
+Mande o `comparacao.mp4` para a pessoa e grave a escolha dela (pode pedir +2, +3...);
+dali em diante o `gerar-voz.mjs` usa o método gravado:
+
+```bash
+node scripts/escolher-voz.mjs gravar C+1
+```
+
+O `gerar-voz.mjs` aplica o método e o ajuste de tom do perfil e **confere frase a frase com dois
+transcritores** (`lib/conferir.mjs`: "ok", "aviso" = só um transcritor discordou,
+provavelmente erro dele; "erro" = os dois ouvem diferente do roteiro). Sai com código 3
+se houver erro, listando as frases.
+
+- **Erro na fala por texto (C):** a voz engole artigos curtos ("sendo o humano" virou
+  "sendo humano"). Mude o texto daquela frase no `frases.json` (uma vírgula antes da
+  palavra engolida resolveu: "sendo, o humano") e rode de novo: só ela é regerada, o
+  resto vem do cache (`voz-trabalho/texto.frases/`). Ou force com
+  `node scripts/gerar-voz-tts.mjs frases.json voz-trabalho/texto.wav <duração> --refazer 11`.
+  O cache separa a fala gerada (custa crédito) do encaixe (grátis): mudar só a janela ou a
+  sincronia reencaixa as falas já aprovadas sem chamar o ElevenLabs.
+- **Na faixa montada, confira com a janela exata da frase.** A conferência isolada de cada
+  frase não vê problemas de montagem (foi assim que um trecho sobreposto virou "tung
+  direito"); o `gerar-voz.mjs` confere na faixa final por isso.
+- **Erro na troca de voz (B):** a troca copia defeitos do avatar e às vezes insere
+  palavra ("comenta **a** automação"). Corte o defeito no `limpo.mp4` (Passo 4b) ou refaça
+  a troca só do trecho e emende com `acrossfade` de 25ms.
+- Depois: `ffmpeg -i voz.wav -ac 1 -ar 16000 voz16.mp3`, `timestamps-palavras.mjs` para
+  os tempos finais e `gerar-sfx.mjs cues.json voz.wav audio.wav` para o áudio da edição.
+- Ajustes finos ficam no perfil: `voz.stability`/`voz.similarity` (troca, padrão 0,35/1,0),
+  `voz.texto` (fala por texto: `modelo`, `stability`, `similarity`, `style`, `speed`;
+  padrão eleven_v4, 0,5, 0,9, 0,2, 1,1) e `voz.ajusteSemitons`.
 
 ## Passo 8: Montagem final (velocidade em `perfil.velocidadeFinal`, padrão 1,1x)
 
-Todo Reel sai acelerado em `velocidadeFinal` (padrão 1,1x) para ficar mais
-dinâmico. Aplique em vídeo e áudio juntos, no final:
+No avatar, o Reel sai acelerado em `velocidadeFinal` (padrão 1,1x).
+No gravado, mantenha 1x salvo pedido explícito. Aplique a velocidade escolhida
+em vídeo e áudio juntos, no final:
 
-1. Legenda (de `estilo.legenda` e `estilo.fontes.legenda`):
+1. Legenda (de `estilo.legenda` e `estilo.fontes.legenda`). No **gravado**, use
+   `palavras.json` da transcrição conferida do vídeo limpo diretamente em
+   `gerar-legenda.mjs palavras.json legenda.ass "9:16"` (ou `"16:9"`): não há roteiro
+   para substituir a fala. No **avatar**, o texto vem do **roteiro** e só
+   os tempos vêm da voz final, então não é preciso remendar o que o transcritor escreveu
+   ("Grock", "R$ 150,00", um "a" inventado, um "os" engolido). Escreva no `roteiro.txt` do
+   jeito que quer ler na tela (ex.: "R$150"):
    ```bash
-   node scripts/timestamps-palavras.mjs voz16.mp3 palavras.json
-   # remova alucinações do Whisper (ex.: "Seventy-A") antes de gerar
-   node scripts/gerar-legenda.mjs palavras.json legenda.ass
+   node scripts/timestamps-palavras.mjs voz16.mp3 palavras_voz.json
+   node scripts/palavras-legenda.mjs roteiro.txt palavras_voz.json palavras_legenda.json
+   node scripts/gerar-legenda.mjs palavras_legenda.json legenda.ass
    node scripts/verificar-legenda.mjs legenda.ass video.mp4      # 0 sobreposições, 0 passando do fim
    ```
 2. Queime a legenda e acelere tudo de uma vez (a legenda é queimada **antes**
    do `setpts`, então os tempos do `.ass` valem para o vídeo de 1,0x). `fonts` é a
-   pasta com o arquivo da fonte da legenda:
+   pasta com o arquivo da fonte da legenda. Troque `1.1` por `perfil.velocidadeFinal`:
    ```bash
    ffmpeg -i renders/motion.mp4 -vf "subtitles=legenda.ass:fontsdir=edicao/fonts,setpts=PTS/1.1" -af "atempo=1.1" -r 30 -c:v libx264 -crf 17 -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart final.mp4
    ```
-   Duração final = duração original / velocidade.
+   Duração final = duração original / velocidade. O ajuste de tom já vem no `voz.wav`
+   (Passo 7); aqui é só velocidade.
 3. Verifique o arquivo final: **retranscreva o `final.mp4` e compare com o roteiro
    frase por frase** (nenhuma repetição, troca ou palavra faltando; ver Passo 4b) e
    confira pacotes de áudio sem salto > 0,1s (`ffprobe -show_entries packet=pts_time`).

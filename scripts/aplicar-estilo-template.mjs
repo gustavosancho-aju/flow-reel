@@ -7,21 +7,39 @@
  * O conteúdo dos painéis (textos, cartões) é reescrito por Reel; a identidade
  * (cores, fontes, raio do cartão, barra, flash) vem do estilo.
  *
- * Uso: node scripts/aplicar-estilo-template.mjs <edicao/index.html>
+ * Uso: node scripts/aplicar-estilo-template.mjs <edicao/index.html> [9:16|16:9] [avatar|gravado] [dividido|camadas]
+ * Os argumentos opcionais podem aparecer em qualquer ordem, preservando a CLI antiga.
+ *   dividido (padrão): painel em cima + cartão do rosto embaixo (assets/edicao-template.html)
+ *   camadas: rosto em tela cheia com elementos ATRÁS e NA FRENTE da pessoa recortada,
+ *            alternando fundo original e fundo preto (assets/edicao-camadas.html; exige pessoa.webm)
  */
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { mkdirSync, readFileSync, writeFileSync } from "fs";
+import { copiarFonte } from "./lib/midia.mjs";
 import { basename, dirname, resolve } from "path";
 import { RAIZ, estilo, rgb } from "./lib/config.mjs";
 import { obterFormato } from "./lib/formato.mjs";
 
-const [, , saida, formatoArg, modo = "avatar"] = process.argv;
+const [, , saida, ...opcoes] = process.argv;
 if (!saida) {
-  console.error("Uso: node scripts/aplicar-estilo-template.mjs <edicao/index.html> [9:16|16:9] [avatar|gravado]");
+  console.error("Uso: node scripts/aplicar-estilo-template.mjs <edicao/index.html> [9:16|16:9] [avatar|gravado] [dividido|camadas]");
   process.exit(1);
 }
-if (!["avatar", "gravado"].includes(modo)) throw new Error("Modo inválido: use avatar ou gravado.");
+const grupos = [["9:16", "16:9"], ["avatar", "gravado"], ["dividido", "camadas"]];
+for (const opcao of opcoes) {
+  if (!grupos.some((grupo) => grupo.includes(opcao))) throw new Error(`Opção inválida: ${opcao}.`);
+}
+for (const grupo of grupos) {
+  if (opcoes.filter((opcao) => grupo.includes(opcao)).length > 1) throw new Error("Opções duplicadas de formato, modo ou layout.");
+}
+const formatoArg = opcoes.find((opcao) => grupos[0].includes(opcao));
+const modo = opcoes.find((opcao) => grupos[1].includes(opcao)) ?? "avatar";
+const layout = opcoes.find((opcao) => grupos[2].includes(opcao)) ?? "dividido";
 const formato = obterFormato(formatoArg);
 const horizontal = formato.nome === "16:9";
+if (layout === "camadas" && (horizontal || modo === "gravado")) {
+  throw new Error("O template camadas exige avatar em 9:16. Para vídeo gravado ou 16:9, use dividido.");
+}
+const modelo = layout === "camadas" ? "assets/edicao-camadas.html" : "assets/edicao-template.html";
 const c = estilo.cores;
 const t = estilo.fontes.titulo;
 const tokens = {
@@ -45,7 +63,7 @@ const tokens = {
   FONTE_CORPO: estilo.fontes.corpo.familia,
   FONTE_CORPO_ARQUIVO: basename(estilo.fontes.corpo.arquivo),
 };
-let html = readFileSync(resolve(RAIZ, "assets/edicao-template.html"), "utf-8");
+let html = readFileSync(resolve(RAIZ, modelo), "utf-8");
 for (const [k, v] of Object.entries(tokens)) html = html.split(`{{${k}}}`).join(v);
 const sobra = html.match(/\{\{[A-Z_]+\}\}/g);
 if (sobra) throw new Error("Tokens sem valor: " + [...new Set(sobra)].join(", "));
@@ -56,7 +74,8 @@ const copiadas = new Set();
 for (const f of Object.values(estilo.fontes)) {
   if (!f?.arquivo || copiadas.has(f.arquivo)) continue;
   copiadas.add(f.arquivo);
-  copyFileSync(f.arquivo, resolve(pasta, "fonts", basename(f.arquivo)));
+  const destino = resolve(pasta, "fonts", basename(f.arquivo));
+  copiarFonte(f.arquivo, destino); // fonte do sistema vem somente leitura: ver lib/midia.mjs
 }
 writeFileSync(resolve(saida), html);
 console.log("ok", saida, "· fontes copiadas para", resolve(pasta, "fonts"));

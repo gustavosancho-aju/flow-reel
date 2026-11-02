@@ -1,9 +1,9 @@
 /**
  * Configuração central do flow-reel.
  *
- * - env: variáveis de ambiente (chaves de API). Procura, nesta ordem:
- *   $FLOW_REEL_ENV, ./.env.local, ./.env (pasta de trabalho), <repo>/.env.local, <repo>/.env
- *   e depois process.env. Nunca imprime valores.
+ * - env: lê apenas <repo>/.env.local e <repo>/.env, nessa prioridade,
+ *   e depois process.env. Nunca procura arquivos na pasta de execução,
+ *   nem usa FLOW_REEL_ENV. Nunca imprime valores.
  * - perfil: dados de quem usa (avatar, voz, publicação). perfil/perfil.json
  * - estilo: identidade visual extraída dos vídeos de referência. perfil/estilo.json
  *   Se um dos dois não existir, cai no arquivo .exemplo.json (neutro).
@@ -33,12 +33,9 @@ function lerEnv(caminho) {
 
 function carregarEnv() {
   const candidatos = [
-    process.env.FLOW_REEL_ENV,
-    resolve(process.cwd(), ".env.local"),
-    resolve(process.cwd(), ".env"),
     resolve(RAIZ, ".env.local"),
     resolve(RAIZ, ".env"),
-  ].filter(Boolean);
+  ];
   const env = {};
   for (const c of candidatos.reverse()) if (existsSync(c)) Object.assign(env, lerEnv(c));
   for (const [k, v] of Object.entries(process.env)) if (v && !(k in env)) env[k] = v;

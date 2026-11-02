@@ -413,12 +413,17 @@ Siga `perfil.publicacao`.
 
 - **Agora → API do Instagram** (capa e legenda vão juntas):
   ```bash
-  node scripts/upload-supabase.mjs final.mp4 reels/x.mp4 video/mp4 post-videos
-  node scripts/upload-supabase.mjs capa.jpg reels/capa-x.jpg image/jpeg post-images
+  node scripts/upload-supabase.mjs final.mp4 reels/x-unico.mp4 video/mp4
+  node scripts/upload-supabase.mjs capa.jpg reels/capa-x-unica.jpg image/jpeg
   node scripts/publicar-instagram.mjs <video_url> <capa_url> legenda.txt
   ```
-  (O upload só hospeda o arquivo com URL pública para a API do Instagram; use qualquer
-  bucket público equivalente se não tiver Supabase.)
+  O upload usa um bucket privado dedicado e imprime a URL assinada temporária.
+  Configure `references/supabase-storage.sql`, a chave publishable e o JWT de um
+  usuário dedicado limitado por RLS (veja `.env.exemplo`). Nomes de destino devem
+  ser únicos: não há sobrescrita. A URL deve continuar válida até a API terminar
+  de baixar/processar vídeo e capa; gere-a perto da publicação, não ao agendar.
+  Nunca use chave administrativa. Expirar a URL não remove o arquivo do bucket;
+  a limpeza posterior cabe ao administrador.
 - **Programar → Meta Business Suite** pelo Chrome (detalhes e armadilhas em
   `references/armadilhas.md`): só Instagram, legenda colada via evento de colar,
   conferir em Programados.

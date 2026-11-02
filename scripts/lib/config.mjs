@@ -9,10 +9,10 @@
  *   Se um dos dois não existir, cai no arquivo .exemplo.json (neutro).
  */
 import { existsSync, readFileSync } from "fs";
-import { dirname, resolve } from "path";
-import { fileURLToPath } from "url";
+import { resolve } from "path";
+import { RAIZ } from "./raiz.mjs";
 
-export const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+export { RAIZ };
 
 function lerEnv(caminho) {
   const out = {};

@@ -2,13 +2,13 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=1080, height=1920" />
+    <meta name="viewport" content="width={{LARGURA}}, height={{ALTURA}}" />
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
     <style>
       @font-face { font-family: "{{FONTE_TITULO}}"; src: url("fonts/{{FONTE_TITULO_ARQUIVO}}"); font-weight: 900; }
       @font-face { font-family: "{{FONTE_CORPO}}"; src: url("fonts/{{FONTE_CORPO_ARQUIVO}}"); font-weight: 700; }
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: {{FUNDO}}; }
+      html, body { margin: 0; width: {{LARGURA}}px; height: {{ALTURA}}px; overflow: hidden; background: {{FUNDO}}; }
       #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: {{FUNDO}};
         font-family: "{{FONTE_CORPO}}", Arial, sans-serif; color: #fff; }
 
@@ -53,10 +53,10 @@
       .it { margin-top: 30px; font-family: "{{FONTE_TITULO}}"; font-weight: 900; font-size: 50px; display: flex; gap: 20px; align-items: baseline; opacity: 0; white-space: nowrap; }
       .it span { color: {{DESTAQUE}}; font-size: 34px; letter-spacing: 3px; }
 
-      #card { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: hidden; border-radius: 0;
+      #card { position: absolute; left: 0; top: 0; width: {{LARGURA}}px; height: {{ALTURA}}px; overflow: hidden; border-radius: 0;
         border: 0 solid rgba({{DESTAQUE_RGB}},0.85); box-shadow: 0 0 0 rgba({{DESTAQUE_RGB}},0); background: {{FUNDO}}; }
       #vwrap { position: absolute; inset: 0; transform-origin: 50% 30%; }
-      #rosto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 36%; }
+      #rosto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: {{AJUSTE_VIDEO}}; object-position: 50% 36%; }
 
       #front { position: absolute; inset: 0; pointer-events: none; }
       .pill { position: absolute; left: 90px; width: 900px; top: 1380px; height: 128px; border-radius: 64px; background: {{DESTAQUE}}; color: {{FUNDO}};
@@ -72,10 +72,11 @@
         font-family: "{{FONTE_TITULO}}"; font-weight: 900; font-size: 58px; line-height: 1.1; color: #fff; text-shadow: 0 4px 20px rgba(0,0,0,0.8); }
       #flash { position: absolute; inset: 0; background: #ffffff; opacity: 0; }
       #bar { position: absolute; left: 0; top: 0; height: 10px; width: 1080px; background: {{DESTAQUE}}; transform-origin: 0 50%; }
+      {{CSS_HORIZONTAL}}
     </style>
   </head>
   <body>
-    <div id="root" data-composition-id="main" data-start="0" data-duration="29.35" data-width="1080" data-height="1920">
+    <div id="root" data-composition-id="main" data-start="0" data-duration="29.35" data-width="{{LARGURA}}" data-height="{{ALTURA}}">
       <div id="backdrop"><div id="grid"></div></div>
 
       <div id="panel">
@@ -151,13 +152,14 @@
     <script>
       const tl = gsap.timeline({ paused: true });
       const D = 29.35;
-      const FULL = { left: 0, top: 0, width: 1080, height: 1920, borderRadius: 0, borderWidth: 0, boxShadow: "0 0 0 rgba({{DESTAQUE_RGB}},0)" };
-      const SPLIT = { left: 40, top: 930, width: 1000, height: 880, borderRadius: 38, borderWidth: 3, boxShadow: "0 0 46px rgba({{DESTAQUE_RGB}},0.35), 0 22px 50px rgba(0,0,0,0.55)" };
+      const FULL = { left: 0, top: 0, width: {{LARGURA}}, height: {{ALTURA}}, borderRadius: 0, borderWidth: 0, boxShadow: "0 0 0 rgba({{DESTAQUE_RGB}},0)" };
+      const SPLIT = { {{GEOMETRIA_DIVIDIDO}}, borderRadius: 38, borderWidth: 3, boxShadow: "0 0 46px rgba({{DESTAQUE_RGB}},0.35), 0 22px 50px rgba(0,0,0,0.55)" };
 
       tl.set("#flash", { opacity: 0 }, 0);
       tl.fromTo("#bar", { scaleX: 0 }, { scaleX: 1, duration: D, ease: "none" }, 0);
 
       function seg(target, t, dur, a, b, ease) {
+        if ({{VIDEO_GRAVADO}} && target === "#vwrap") return;
         tl.fromTo(target, { scale: a }, { scale: b, duration: dur, ease: ease || "none", immediateRender: false }, t);
       }
       function cut(t, o) { tl.fromTo("#flash", { opacity: o == null ? 0.45 : o }, { opacity: 0, duration: 0.22, ease: "power2.out", immediateRender: false }, t); }

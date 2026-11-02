@@ -9,6 +9,11 @@ import { resolve } from "path";
 import { RAIZ } from "./lib/config.mjs";
 
 const faltando = [];
+const modo = process.argv[2] ?? "avatar";
+if (!["avatar", "gravado"].includes(modo)) {
+  console.error("Uso: node scripts/validar-perfil.mjs [avatar|gravado]");
+  process.exit(1);
+}
 const ler = (arq) => {
   const p = resolve(RAIZ, arq);
   return existsSync(p) ? JSON.parse(readFileSync(p, "utf-8")) : null;
@@ -19,7 +24,8 @@ const estilo = ler("perfil/estilo.json");
 
 if (!perfil) faltando.push("perfil/perfil.json");
 else {
-  for (const k of ["nome", "nicho", "avatar", "cenario", "figurino"]) if (!perfil[k] || /^(Seu Nome|descreva)/.test(String(perfil[k]))) faltando.push(`perfil.${k}`);
+  const campos = modo === "gravado" ? ["nome", "nicho"] : ["nome", "nicho", "avatar", "cenario", "figurino"];
+  for (const k of campos) if (!perfil[k] || /^(Seu Nome|descreva)/.test(String(perfil[k]))) faltando.push(`perfil.${k}`);
 }
 if (!estilo) faltando.push("perfil/estilo.json");
 else {

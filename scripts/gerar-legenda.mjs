@@ -11,8 +11,10 @@
  */
 import { readFileSync, writeFileSync } from "fs";
 import { env, estilo, perfil, ffColor, assColor, rgb } from "./lib/config.mjs";
+import { obterFormato } from "./lib/formato.mjs";
 
-const [, , entrada, saida] = process.argv;
+const [, , entrada, saida, formatoArg] = process.argv;
+const formato = obterFormato(formatoArg);
 const brutas = JSON.parse(readFileSync(entrada, "utf-8"));
 
 /**
@@ -102,14 +104,14 @@ const grupos = agruparPalavras(palavras);
 
 const cabecalho = `[Script Info]
 ScriptType: v4.00+
-PlayResX: 720
-PlayResY: 1280
+PlayResX: ${formato.legendaLargura}
+PlayResY: ${formato.legendaAltura}
 WrapStyle: 0
 ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Reels,${FL.familia},${FL.tamanho ?? 32},${BRANCO},${BRANCO},&H00000000&,&H90000000&,1,0,0,0,100,100,1,0,1,5,2,2,70,70,${Math.round(1280 * (1 - (L.posicaoVerticalPct ?? 88) / 100)) - 14},1
+Style: Reels,${FL.familia},${FL.tamanho ?? 32},${BRANCO},${BRANCO},&H00000000&,&H90000000&,1,0,0,0,100,100,1,0,1,5,2,2,70,70,${Math.round(formato.legendaAltura * (1 - (L.posicaoVerticalPct ?? 88) / 100)) - 14},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text

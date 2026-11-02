@@ -12,15 +12,30 @@
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { basename, dirname, resolve } from "path";
 import { RAIZ, estilo, rgb } from "./lib/config.mjs";
+import { obterFormato } from "./lib/formato.mjs";
 
-const saida = process.argv[2];
+const [, , saida, formatoArg, modo = "avatar"] = process.argv;
 if (!saida) {
-  console.error("Uso: node scripts/aplicar-estilo-template.mjs <edicao/index.html>");
+  console.error("Uso: node scripts/aplicar-estilo-template.mjs <edicao/index.html> [9:16|16:9] [avatar|gravado]");
   process.exit(1);
 }
+if (!["avatar", "gravado"].includes(modo)) throw new Error("Modo inválido: use avatar ou gravado.");
+const formato = obterFormato(formatoArg);
+const horizontal = formato.nome === "16:9";
 const c = estilo.cores;
 const t = estilo.fontes.titulo;
 const tokens = {
+  LARGURA: formato.largura, ALTURA: formato.altura,
+  VIDEO_GRAVADO: modo === "gravado", AJUSTE_VIDEO: modo === "gravado" ? "contain" : "cover",
+  GEOMETRIA_DIVIDIDO: horizontal ? "left: 900, top: 80, width: 960, height: 920" : "left: 40, top: 930, width: 1000, height: 880",
+  CSS_HORIZONTAL: horizontal ? `
+    #panel { left: 50px; top: 170px; transform: scale(0.8); transform-origin: 0 0; }
+    #etiqueta { top: 55px; }
+    #titulo { width: 1920px; top: 150px; font-size: 96px; }
+    #fim { left: 480px; top: 730px; }
+    .pill { left: 510px; top: 890px; height: 110px; }
+    #bar { width: 1920px; }
+  ` : "",
   DESTAQUE: c.destaque, DESTAQUE_RGB: rgb(c.destaque),
   FUNDO: c.fundo,
   ALERTA: c.alerta || "#FF5A5A", ALERTA_RGB: rgb(c.alerta || "#FF5A5A"),

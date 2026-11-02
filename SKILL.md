@@ -8,7 +8,9 @@ description: |
   clonada (ElevenLabs), capa e publicação. Na PRIMEIRA vez, pede 4 vídeos de
   referência e extrai fontes, cores e elementos para perfil/estilo.json. Use
   sempre que a pessoa pedir para criar, editar ou publicar um Reel/vídeo com o
-  avatar dela; tema e duração variam a cada pedido, nunca são fixos.
+  avatar dela ou editar um vídeo já gravado (visita a imóvel, depoimento etc.).
+  Vídeo gravado pula a geração no Flow; aceita 9:16 e 16:9.
+  Tema e duração variam a cada pedido, nunca são fixos.
 ---
 
 # Flow Reel: do tema ao Instagram
@@ -25,6 +27,12 @@ Os caminhos abaixo (`scripts/`, `perfil/`, `assets/`) são relativos à pasta do
 skill (onde está este arquivo).
 
 ## Passo 0: Primeiro uso ou pedido normal?
+
+Identifique o modo antes da validação: **avatar** (padrão atual) ou **gravado**
+(a pessoa fornece um vídeo bruto). No gravado, use `node scripts/validar-perfil.mjs gravado`:
+nome e nicho continuam necessários; avatar, cenário e figurino do Flow não são exigidos.
+Faça o mesmo onboarding de estilo, mas pule as perguntas sobre o Flow e não ative
+troca de voz automaticamente. Não precisa de conta, créditos ou extensão do Flow.
 
 ```bash
 node scripts/validar-perfil.mjs
@@ -110,6 +118,7 @@ Rode `node scripts/validar-perfil.mjs` de novo: precisa dar `pronto: true`.
 
 ### Entender o pedido (todo Reel)
 
+- Se recebeu **vídeo gravado**, siga a entrada alternativa abaixo; pule os Passos 1 e 2.
 - Se a pessoa **mandou o roteiro pronto** (cenas com fala exata), use as falas
   exatamente como vieram e pule para o Passo 2. Não reescreva a fala.
 - Se não mandou, pergunte **o tema** e **quanto tempo de vídeo**. O Flow gera
@@ -117,7 +126,48 @@ Rode `node scripts/validar-perfil.mjs` de novo: precisa dar `pronto: true`.
 - Releia `perfil/perfil.json` e `perfil/estilo.json` e use esses valores em tudo
   abaixo (cenário, figurino, avatar, cores, fontes, velocidade final).
 
-## Passo 1: Roteiro (só se não veio pronto)
+### Entrada alternativa: vídeo gravado (9:16 ou 16:9)
+
+Receba o caminho do bruto e o formato de saída desejado. Sem formato explícito,
+o script infere a orientação, incluindo a rotação de vídeos de celular:
+
+```bash
+node scripts/preparar-video-gravado.mjs visita.mp4 visita-editada "16:9"
+node scripts/transcrever-openai.mjs visita-editada/voz16.mp3
+```
+
+O script preserva o arquivo original e gera `base.mp4`, `voz16.mp3` e `projeto.json`
+na pasta nova. Usa faixas quando necessário, sem recortar ou distorcer. Exige áudio.
+O manifesto registra `modo`, `formato`, dimensões e `velocidadeFinal: 1`; ele serve
+de referência para os comandos seguintes (não é carregado automaticamente).
+
+Entre no **Passo 3** para conferir a transcrição e o visual do bruto. Não há cenas
+para gerar ou comparar com roteiro: use a fala original como referência e identifique
+repetições/tentativas de fala para cortar no Passo 4b. Não reescreva um depoimento.
+Trechos de visita sem fala podem ser importantes: preserve-os quando fizerem parte
+da demonstração, em vez de aplicar corte de silêncio indiscriminadamente.
+
+Depois, reaproveite os Passos 4 a 10. No gravado, mantenha cenário e voz originais,
+com velocidade **1x** por padrão; troca de voz e aceleração só quando solicitadas.
+Use o mesmo formato em toda a cadeia:
+
+```bash
+node scripts/aplicar-estilo-template.mjs edicao/index.html "16:9" gravado
+node scripts/gerar-legenda.mjs palavras.json legenda.ass "16:9"
+node scripts/gerar-capa.mjs foto.jpg capa.jpg "16:9"
+```
+
+Use `"9:16"` para vertical. O template gravado mantém a imagem inteira e desativa
+os zooms do exemplo. Em 16:9, painel e vídeo ficam lado a lado. Como no avatar,
+reescreva os painéis e seus tempos, duração da composição e dos clipes para a fala
+final (o exemplo contém 29,35s). Reextraia `voz16.mp3` do vídeo limpo antes de gerar
+timestamps e legenda. A capa pode usar um quadro representativo do imóvel/depoimento.
+Na montagem, use `setpts=PTS/1` e `atempo=1`, salvo velocidade pedida.
+Para publicar horizontal, use o destino/formato solicitado; para um Reel vertical,
+prepare uma versão 9:16 e confira o enquadramento. O script do Instagram continua
+publicando Reels; o do LinkedIn recebe o arquivo no formato escolhido.
+
+## Passo 1: Roteiro (só se não veio pronto; modo avatar)
 
 1. Fato, número ou "novidade" no tema: pesquise de verdade (WebSearch). Nunca
    invente dado.
@@ -200,9 +250,10 @@ node -e "const p=require('./palavras.json');console.log(p.map(w=>w.texto+' '+w.i
 2. Corte o defeito no vídeo **e** no áudio juntos (`trim`/`atrim` + `concat`,
    `setpts=PTS-STARTPTS`), gerando `limpo.mp4`: da primeira palavra duplicada até
    o início da palavra boa seguinte, com ~0,02 a 0,05s de folga.
-3. **Retranscreva o `limpo.mp4`** e confira de novo. Só siga quando o texto bater
-   com o roteiro (pontuação e "mas"/"e" no meio não contam). Se um erro não for
-   cortável, regere só aquela cena com a correção no prompt.
+3. **Retranscreva o `limpo.mp4`** e confira de novo. No avatar, só siga quando o texto
+   bater com o roteiro (pontuação e "mas"/"e" no meio não contam); se um erro não
+   for cortável, regere a cena. No gravado, compare com a fala original e os cortes
+   aprovados: remova repetições sem mudar o sentido; peça nova gravação se necessário.
 4. Repita a retranscrição **uma última vez no vídeo final** (Passo 8).
 
 ## Passo 5: Fundo: manter o original (padrão)
@@ -361,8 +412,8 @@ Siga `perfil.publicacao`.
 
 ### LinkedIn (quando a pessoa pedir; `perfil.publicacao.linkedin`)
 
-O vídeo vai como post nativo, **9:16 mesmo** (o feed mostra menor, com faixas
-laterais). O texto é reescrito para o tom do LinkedIn, não copiado do Instagram:
+O vídeo vai como post nativo, no formato escolhido (9:16 ou 16:9).
+O texto é reescrito para o tom do LinkedIn, não copiado do Instagram:
 gancho curto, primeira pessoa, problema, passo a passo, pergunta final, **3 a 5
 hashtags**, sem travessão.
 

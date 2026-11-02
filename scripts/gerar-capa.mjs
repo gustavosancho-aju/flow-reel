@@ -13,8 +13,14 @@ import { execFileSync } from "child_process";
 import { mkdirSync, copyFileSync, existsSync } from "fs";
 import { dirname, basename, resolve } from "path";
 import { env, estilo, perfil, ffColor, assColor, rgb } from "./lib/config.mjs";
+import { obterFormato } from "./lib/formato.mjs";
 
-const [, , foto, saidaPath] = process.argv;
+const [, , foto, saidaPath, formatoArg] = process.argv;
+if (!foto || !saidaPath) {
+  console.error("Uso: node scripts/gerar-capa.mjs <foto.jpg> <saida.jpg> [9:16|16:9]");
+  process.exit(1);
+}
+const formato = obterFormato(formatoArg);
 const DIR = dirname(resolve(saidaPath));
 mkdirSync(DIR, { recursive: true });
 for (const [origem, destino] of [
@@ -28,8 +34,8 @@ const BARRA = String.fromCharCode(92);
 const VIRGULA = String.fromCharCode(44);
 const esc = (t) => t.split(VIRGULA).join(BARRA + VIRGULA).split(":").join(BARRA + ":");
 
-const W = 1080;
-const H = 1920;
+const W = formato.largura;
+const H = formato.altura;
 const VERDE = ffColor(estilo.cores.destaque);
 const BRANCO = ffColor(estilo.cores.texto);
 const FUNDO = ffColor(estilo.cores.fundo);
@@ -41,7 +47,7 @@ const SUB = process.env.SUB ?? "feito com Claude Code";
 
 // O grid do perfil corta o Reel em 4:5 a partir do centro: tudo que importa
 // precisa caber entre y=285 e y=1635. O bloco de texto fica dentro disso.
-const BASE = 1180;
+const BASE = formato.nome === "16:9" ? 550 : 1180;
 const P1 = 78;   // corpo das duas primeiras linhas
 const P3 = 92;   // linha de destaque, um pouco maior
 const X = 84;

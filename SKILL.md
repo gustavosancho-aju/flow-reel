@@ -232,6 +232,23 @@ ffmpeg -i cena1.mp4 ... -filter_complex "[0:v][0:a]...concat=n=N:v=1:a=1[v][a]" 
 node scripts/cortar-silencio.mjs base.mp4 sem_silencio.mp4 0.35 0.12
 ```
 
+O comando acima continua disponível. Para selecionar o motor explicitamente:
+
+```bash
+node scripts/cortar-video.mjs base.mp4 sem_silencio.mp4 ffmpeg 0.35 0.12
+node scripts/cortar-video.mjs base.mp4 sem_silencio.mp4 auto-editor 0.35 0.12 0.025
+```
+
+O padrão de `cortar-video.mjs` é `ffmpeg`. O motor `auto-editor` usa a CLI 31.x,
+instalada pelo [binário oficial](https://auto-editor.com/installing), no PATH ou
+em `AUTO_EDITOR_PATH` (caminho do executável, sem argumentos). Não depende de pip.
+Parâmetros finais: duração mínima do silêncio, margem de respiro e limiar de áudio
+(fração de 0 a 1, exclusivo em 0; só auto-editor). Os motores têm detectores
+diferentes: ouça os cortes e ajuste o limiar/margem. Ambos cortam áudio e vídeo juntos
+e preservam as dimensões. Se faltar auto-editor, o comando informa como usar FFmpeg;
+não troca de motor silenciosamente. Nenhum motor remove repetições de fala sozinho:
+o Passo 4b continua obrigatório. No gravado, preserve cenas relevantes sem fala.
+
 ### 4b. Retranscrever o vídeo cortado e caçar defeitos do avatar
 
 A transcrição por cena (Passo 3) **não pega tudo**: o avatar repete palavras ou

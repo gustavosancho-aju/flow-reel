@@ -1,5 +1,5 @@
 /** Renovação de sessão Auth com rotação persistida, sem credenciais admin. */
-import { closeSync, existsSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { closeSync, existsSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync, statSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { RAIZ } from "./raiz.mjs";
@@ -20,15 +20,45 @@ export function usuarioToken(token) {
   return usuario;
 }
 
+export function processoExiste(pid) {
+  try { process.kill(pid, 0); return true; }
+  catch (erro) { return erro.code !== 'ESRCH'; } // EPERM não significa processo morto.
+}
+
+export function adquirirTrava(lock, { agora = Date.now, existe = processoExiste, maxIdade = 300000 } = {}) {
+  const dono = { id: randomUUID(), pid: process.pid, criadoEm: agora() };
+  const conferir = () => {
+    try { return JSON.parse(readFileSync(lock, 'utf8')).id === dono.id; } catch { return false; }
+  };
+  for (let tentativa = 0; tentativa < 4; tentativa++) {
+    let fd;
+    try {
+      fd = openSync(lock, 'wx', 0o600);
+      writeFileSync(fd, JSON.stringify(dono));
+      closeSync(fd); fd = undefined;
+      return { conferir, liberar() { if (conferir()) unlinkSync(lock); } };
+    } catch (erro) {
+      if (fd !== undefined) { closeSync(fd); unlinkSync(lock); }
+      if (erro.code !== 'EEXIST') throw new Error('Não foi possível bloquear o arquivo local de sessão Supabase.');
+      try {
+        const antes = statSync(lock), conteudo = readFileSync(lock, 'utf8');
+        let outro; try { outro = JSON.parse(conteudo); } catch { outro = {}; }
+        const velho = agora() - antes.mtimeMs > maxIdade;
+        const morto = Number.isInteger(outro.pid) && outro.pid > 0 && !existe(outro.pid);
+        if (!velho && !morto) throw new Error('Renovação Supabase em andamento; aguarde o outro upload e tente novamente.');
+        // Só remove a mesma instância inspecionada, nunca uma trava renovada.
+        const atual = statSync(lock);
+        if (atual.ino === antes.ino && atual.mtimeMs === antes.mtimeMs && readFileSync(lock, 'utf8') === conteudo) unlinkSync(lock);
+      } catch (e) { if (e.code !== 'ENOENT') throw e; }
+    }
+  }
+  throw new Error('Renovação Supabase em andamento; tente novamente.');
+}
+
 export async function renovarSessao({ base, key, token }, config, request = fetch,
   { arquivoSessao = resolve(RAIZ, ".supabase-session.json") } = {}) {
   const lock = `${arquivoSessao}.lock`;
-  let fd;
-  try { fd = openSync(lock, "wx", 0o600); }
-  catch (erro) {
-    if (erro.code === "EEXIST") throw new Error("Renovação Supabase em andamento; aguarde o outro upload e tente novamente.");
-    throw new Error("Não foi possível bloquear o arquivo local de sessão Supabase.");
-  }
+  const trava = adquirirTrava(lock);
   let temporario;
   try {
     let anterior;
@@ -46,7 +76,7 @@ export async function renovarSessao({ base, key, token }, config, request = fetc
     let resposta;
     try {
       resposta = await request(`${base}/auth/v1/token?grant_type=refresh_token`, {
-        method: "POST", redirect: "error", headers: { apikey: key, "Content-Type": "application/json" },
+        method: "POST", redirect: "error", signal: AbortSignal.timeout(120000), headers: { apikey: key, "Content-Type": "application/json" },
         body: JSON.stringify({ refresh_token: refreshToken }),
       });
     } catch { throw new Error("Falha de conexão ao renovar a sessão Supabase; nenhuma mídia foi enviada."); }
@@ -63,6 +93,7 @@ export async function renovarSessao({ base, key, token }, config, request = fetc
       throw new Error("Renovação Supabase não retornou uma sessão válida com refresh token.");
     }
     // Persistir ANTES de subir a mídia: falhas de upload não perdem a rotação.
+    if (!trava.conferir()) throw new Error('Trava Supabase substituída durante renovação; nenhuma mídia foi enviada.');
     temporario = `${arquivoSessao}.${randomUUID()}.tmp`;
     try {
       writeFileSync(temporario, JSON.stringify({ base, userId: usuario.sub, refreshToken: sessao.refresh_token }) + "\n", { mode: 0o600, flag: "wx" });
@@ -72,7 +103,6 @@ export async function renovarSessao({ base, key, token }, config, request = fetc
     return sessao.access_token;
   } finally {
     if (temporario && existsSync(temporario)) unlinkSync(temporario);
-    closeSync(fd);
-    unlinkSync(lock);
+    trava.liberar();
   }
 }

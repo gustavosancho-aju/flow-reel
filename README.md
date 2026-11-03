@@ -93,6 +93,19 @@ respectivos tempos para a sua fala; o exemplo do template contém 29,35s. Instal
 os recursos HyperFrames quando for usar motions. A exportação local inicial usa
 FFmpeg e não exige essa instalação. Veja o fluxo completo no [SKILL.md](SKILL.md).
 
+Para abrir o projeto de motions depois de personalizá-lo, execute dentro de
+`videos/minha-edicao/edicao` (internet é necessária na primeira execução):
+
+```bash
+npx --yes hyperframes@0.9.6 check
+npx --yes hyperframes@0.9.6 preview
+```
+
+Esses comandos obtêm a CLI pública, sem depender de uma instalação do autor.
+Para o agente usar o fluxo completo de autoria, instale os skills públicos com
+`npx --yes hyperframes@0.9.6 skills update general-video`. Confira as prévias
+antes de renderizar.
+
 `configurar` cria `perfil/perfil.json`, `.env.local` e, se você escolher
 `--estilo-basico`, `perfil/estilo.json`. Arquivos existentes são preservados.
 A voz inicial é a original e a publicação fica desativada; você pode habilitar

@@ -1,6 +1,6 @@
 /** Verifica apenas dependências locais; não autentica nem chama APIs. */
 import { spawnSync } from "node:child_process";
-import { pathToFileURL } from "node:url";
+import { executadoDiretamente } from "./lib/cli.mjs";
 import { RAIZ } from "./lib/raiz.mjs";
 import { resolverFonte } from "./lib/fontes.mjs";
 import { readFileSync } from "node:fs";
@@ -31,7 +31,7 @@ export function diagnosticar({ raiz = RAIZ, versaoNode = process.versions.node, 
     opcionais: "Google Flow, transcrição por API ou local, voz clonada, HyperFrames e publicação são configurados quando usados." };
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (executadoDiretamente(import.meta.url)) {
   const args = process.argv.slice(2);
   if (args.includes("--help")) {
     console.log("Uso: npm run diagnostico -- [--json] [avatar|gravado]");

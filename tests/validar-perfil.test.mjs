@@ -59,7 +59,7 @@ test("JSON inválido vira diagnóstico de configuração", (t) => {
 test("CLI mantém JSON e códigos de saída 0, 2 e 1", (t) => {
   const f = fixture(t);
   mkdirSync(join(f.raiz, "scripts/lib"), { recursive: true });
-  for (const nome of ["validar-perfil.mjs", "lib/raiz.mjs"]) {
+  for (const nome of ["validar-perfil.mjs", "lib/raiz.mjs", "lib/cli.mjs"]) {
     copyFileSync(new URL(`../scripts/${nome}`, import.meta.url), join(f.raiz, "scripts", nome));
   }
   const run = (modo = "avatar") => spawnSync(process.execPath, [join(f.raiz, "scripts/validar-perfil.mjs"), modo], { encoding: "utf8", cwd: tmpdir() });

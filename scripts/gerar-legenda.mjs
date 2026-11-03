@@ -10,12 +10,12 @@
  * em Arial sem avisar.
  */
 import { readFileSync, writeFileSync } from "node:fs";
-import { pathToFileURL } from "node:url";
+import { executadoDiretamente } from "./lib/cli.mjs";
 import { estilo } from "./lib/config.mjs";
 import { gerarLegenda } from "./lib/legenda.mjs";
 export { gerarLegenda, normalizar, agruparPalavras } from "./lib/legenda.mjs";
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (executadoDiretamente(import.meta.url)) {
   const [, , entrada, saida, formato] = process.argv;
   if (!entrada || !saida) {
     console.error("Uso: node scripts/gerar-legenda.mjs <palavras.json> <saida.ass> [9:16|16:9]");

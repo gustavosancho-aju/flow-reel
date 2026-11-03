@@ -6,7 +6,7 @@
  */
 import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
-import { pathToFileURL } from "node:url";
+import { executadoDiretamente } from "./lib/cli.mjs";
 import { RAIZ } from "./lib/raiz.mjs";
 
 export function validarPerfil(raiz = RAIZ, modo) {
@@ -50,7 +50,7 @@ export function validarPerfil(raiz = RAIZ, modo) {
   return { pronto: faltando.length === 0, primeiroUso, faltando, avisos };
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (executadoDiretamente(import.meta.url)) {
   try {
     const resultado = validarPerfil(RAIZ, process.argv[2]);
     console.log(JSON.stringify(resultado));

@@ -1,7 +1,7 @@
 /** Primeiro uso: cria somente arquivos locais, sem sobrescrever perfil ou chaves. */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { executadoDiretamente } from "./lib/cli.mjs";
 import { createInterface } from "node:readline/promises";
 import { RAIZ } from "./lib/raiz.mjs";
 
@@ -60,6 +60,6 @@ async function main() {
   }
   console.log(JSON.stringify(configurar(opcoes), null, 2));
 }
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (executadoDiretamente(import.meta.url)) {
   main().catch((erro) => { console.error(erro.message); process.exitCode = 1; });
 }

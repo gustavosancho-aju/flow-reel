@@ -2,7 +2,7 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { executadoDiretamente } from "./lib/cli.mjs";
 import { RAIZ } from "./lib/raiz.mjs";
 import { obterFormato } from "./lib/formato.mjs";
 import { diagnosticar } from "./diagnostico.mjs";
@@ -70,4 +70,4 @@ async function main() {
   }
   console.log(JSON.stringify(await editarGravado(entrada, pasta, opcoes), null, 2));
 }
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().catch((erro) => { console.error(erro.message); process.exitCode = 1; });
+if (executadoDiretamente(import.meta.url)) main().catch((erro) => { console.error(erro.message); process.exitCode = 1; });

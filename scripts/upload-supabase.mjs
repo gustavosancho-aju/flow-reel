@@ -6,7 +6,7 @@
  * O bucket opcional deve coincidir com SUPABASE_STORAGE_BUCKET (flow-reel-media).
  */
 import { readFileSync } from "node:fs";
-import { pathToFileURL } from "node:url";
+import { executadoDiretamente } from "./lib/cli.mjs";
 import { env } from "./lib/config.mjs";
 import { claimsToken, renovarSessao, usuarioToken } from "./lib/supabase-auth.mjs";
 
@@ -71,7 +71,7 @@ export async function uploadSupabase(arquivo, destino, mime, config = env, bucke
   return `${base}/storage/v1${signedURL}`;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (executadoDiretamente(import.meta.url)) {
   const [, , arquivo, destino, mime, bucket] = process.argv;
   if (!arquivo || !destino || !mime) {
     console.error("Uso: node scripts/upload-supabase.mjs <arquivo> <destino> <mime> [bucket]");

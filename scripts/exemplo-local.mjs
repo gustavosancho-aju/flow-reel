@@ -21,7 +21,7 @@ if (args.includes("--help")) {
       "-f", "lavfi", "-i", "aevalsrc=if(between(t\\,1\\,2)\\,0\\,0.5*sin(2*PI*440*t)):s=44100",
       "-t", "3", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", video], { stdio: "inherit" });
     writeFileSync(palavras, JSON.stringify([{ texto: "EDIÇÃO", inicio: 0.1, fim: 0.6 }, { texto: "LOCAL", inicio: 0.6, fim: 1.0 }, { texto: "DEMONSTRAÇÃO", inicio: 1.3, fim: 1.9 }]));
-    const projeto = await editarGravado(video, saida, { formato, cortarSilencio: true, palavras });
+    const projeto = await editarGravado(video, saida, { formato, cortarSilencio: true, palavras, motions: false, transcritor: 'nenhum' });
     writeFileSync(resolve(saida, "exemplo.json"), JSON.stringify({ ...projeto, origemLegenda: "Fixture demonstrativa, não é transcrição; áudio é um tom sintético." }, null, 2));
     console.log(`Exemplo pronto: ${projeto.final}\nA imagem, o áudio e as palavras são sintéticos. Nenhum serviço externo foi chamado.`);
   } catch (erro) { console.error(erro.message); process.exitCode = 1; }

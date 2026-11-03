@@ -40,13 +40,24 @@ relativos em `estilo.json` são resolvidos a partir da raiz do clone.
 O preset básico permite começar; a extração com 4 referências continua sendo o
 fluxo de personalização. O configurador não sobrescreve perfil, estilo ou chaves.
 
-Para uma primeira exportação sem APIs, use
-`npm run editar -- bruto.mp4 videos/primeira-edicao "9:16"` (ou `"16:9"`). Esse
-comando exporta vídeo/capa e prepara o template, sem renderizar os motions de exemplo.
-Silêncio só é cortado com `--cortar-silencio`; legendas só são queimadas ao fornecer
-`--palavras palavras.json` com os tempos do vídeo limpo. A voz permanece original,
-publicação é opcional e cada pessoa configura as próprias contas. Para verificar a
-instalação sem mídia pessoal nem chaves, use `npm run exemplo` após configurar.
+Para editar gravado, use `npm run editar -- bruto.mp4 videos/edicao "9:16"`
+(ou `"16:9"`). Sem `--palavras`, transcreve usando GROQ_API_KEY ou OPENAI_API_KEY,
+nessa prioridade. Escolha com `--transcritor groq|openai|auto|nenhum`. Sem chave
+em auto, avisa e exporta sem legenda; falha de API não é ignorada. Nunca procure
+chaves fora da raiz. A voz permanece original em 1x.
+
+Silêncio só é cortado com `--cortar-silencio`: na transcrição automática, use os
+intervalos de fala e tempos recalculados de `cortes.json`. Revise B-roll e
+repetições; a detecção não decide quais frases remover. Sem fala, preserve o
+vídeo inteiro. `--palavras` evita APIs e mantém o contrato de tempos já após os
+cortes; nessa opção o corte usa o FFmpeg legado.
+
+O editor renderiza HyperFrames de fato, com duração real, mídia inteira,
+destaques da fala e progresso, nos dois formatos. Queima legenda sobre
+`motion.mp4` para criar `final.mp4`. Confira imagem, texto e áudio na exportação.
+O template legado de avatar continua separado e requer personalização manual.
+`--sem-motions` mantém a exportação rápida anterior. Para offline leve, combine
+`--transcritor nenhum --sem-motions`. `npm run exemplo` continua sem APIs/render.
 
 
 Identifique o modo antes da validação: **avatar** (padrão atual) ou **gravado**
@@ -156,7 +167,8 @@ Rode `node scripts/validar-perfil.mjs` de novo: precisa dar `pronto: true`.
 
 ### Entrada alternativa: vídeo gravado (9:16 ou 16:9)
 
-Receba o caminho do bruto e o formato de saída desejado. Sem formato explícito,
+Receba o caminho do bruto e o formato de saída desejado. Prefira o editor
+automático acima. A sequência abaixo é a alternativa manual. Sem formato explícito,
 o script infere a orientação, incluindo a rotação de vídeos de celular:
 
 ```bash
@@ -558,6 +570,24 @@ node scripts/publicar-linkedin-video.mjs final.mp4 texto_linkedin.txt "Título c
 
 Precisa de `LINKEDIN_ACCESS_TOKEN` no `.env.local` (token vale ~60 dias). O LinkedIn
 não tem agendamento por essa API: publica na hora.
+
+## Testes e recuperação de trava
+
+Rode `npm test`. Para testar mídia real nos dois formatos, use
+`node tests/e2e-gravado.mjs bruto.mp4 test-output/e2e-real`, com perfil e chave
+configurados. O terceiro argumento opcional é uma transcrição fixture do mesmo
+vídeo: nesse caso a API de transcrição é simulada, como consta no relatório.
+O E2E sempre simula publicação, mesmo quando a transcrição é real.
+
+`--teste` nos publicadores Instagram e LinkedIn executa simulação local, sem
+tokens, rede externa ou posts públicos. Identifique o resultado como SIMULADO;
+nunca apresente seus IDs como permalinks reais. Os relatórios registram
+`publicadoNaRede: false`. Só remova essa opção com ordem para publicação real.
+
+A renovação Supabase recupera automaticamente a trava se tiver mais de cinco
+minutos ou PID inexistente. Respeite travas recentes de processos vivos. O dono
+confere sua identificação antes de salvar a sessão e liberar a trava; não exclua
+manualmente travas durante uploads em execução.
 
 ## Referências
 

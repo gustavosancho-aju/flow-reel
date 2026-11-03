@@ -81,22 +81,39 @@ npm run editar -- "caminho/do/bruto.mp4" "videos/minha-edicao" "9:16"
 ```
 
 Esse comando prepara o vídeo, mantém a voz em 1x, exporta `final.mp4`, cria `capa.jpg`
-e prepara `edicao/index.html` com fontes e mídia locais. A pasta de saída precisa
-ser nova ou vazia. O silêncio só é cortado quando você acrescenta
-`--cortar-silencio`, para preservar cenas sem fala em visitas e demonstrações.
-Para horizontal, use `"16:9"`. A entrada precisa ter áudio e imagem.
+e renderiza o projeto HyperFrames de `edicao/`. A pasta de saída precisa ser nova
+ou vazia. Para horizontal, use `"16:9"`. A entrada precisa ter áudio e imagem.
+Sem `--palavras`, transcreve automaticamente com `GROQ_API_KEY` (preferencial,
+whisper-large-v3) ou `OPENAI_API_KEY` (whisper-1). Escolha explicitamente com
+`--transcritor groq|openai|auto|nenhum`. Só lê as chaves da raiz do flow-reel ou
+do ambiente do processo. Sem chaves em auto, avisa e continua sem legenda;
+falhas de API interrompem a execução e não trocam de provedor silenciosamente.
+Áudios acima de 24 MB precisam ser divididos antes da transcrição.
+
+O corte continua opcional com `--cortar-silencio`, para preservar cenas sem fala.
+Com transcrição automática, mantém intervalos de fala com margem de 0,12s e
+remove pausas entre eles de pelo menos 0,35s, recalculando os tempos da legenda.
+Revise `transcricao-original.json`, `cortes.json` e `palavras.json`. Não remove
+repetições semanticamente sozinho. Sem fala reconhecida, preserva o vídeo inteiro.
 
 Para queimar legendas, acrescente `--palavras caminho/palavras.json`, uma lista
 `[{"texto":"Olá","inicio":0.2,"fim":0.6}]` cujos tempos correspondam ao vídeo
 **após os cortes**. Pode ser produzida por um transcritor local de sua escolha ou
-por `timestamps-palavras.mjs` com Groq. O comando não transcreve automaticamente.
-Sem esse argumento, a exportação inicial não tem legendas. A capa usa um título
+por `timestamps-palavras.mjs` com Groq. Esse argumento evita transcrição por API;
+se combinar com corte, usa o motor FFmpeg legado. A capa usa um título
 neutro; personalize `L1`, `L2`, `L3` e `SUB` como documentado no skill.
 
-O template HyperFrames é um ponto de partida. Personalize textos, painéis e os
-respectivos tempos para a sua fala; o exemplo do template contém 29,35s. Instale
-os recursos HyperFrames quando for usar motions. A exportação local inicial usa
-FFmpeg e não exige essa instalação. Veja o fluxo completo no [SKILL.md](SKILL.md).
+O editor automático renderiza `motion.mp4` e queima a legenda sobre ele para
+produzir `final.mp4`. Usa a duração real, imagem inteira, fontes/GSAP locais,
+barra de progresso e destaques extraídos da fala, em 9:16 ou 16:9. Sem palavras,
+anima somente o progresso. Não usa os textos demonstrativos do template legado
+de avatar, que continua separado para autoria manual.
+
+`npm install` instala HyperFrames 0.9.6 e GSAP fixados. O primeiro render pode
+baixar Chromium e precisa de internet e espaço em disco. Falhas de check/render
+interrompem a exportação. `--sem-motions` preserva a exportação rápida anterior;
+combine com `--transcritor nenhum` para edição local sem APIs nem render.
+`npm run exemplo` mantém esse caminho leve. Veja o [SKILL.md](SKILL.md).
 
 Para abrir o projeto de motions depois de personalizá-lo, execute dentro de
 `videos/minha-edicao/edicao` (internet é necessária na primeira execução):
@@ -198,7 +215,9 @@ O skill pula roteiro e **Passo 2 (Google Flow)** e reaproveita a conferência da
 corte de silêncio/repetições, timestamps, legenda, motions HyperFrames, capa e
 publicação. A identidade visual continua vindo do seu perfil e das referências.
 
-Para preparar o material manualmente, execute da raiz do flow-reel:
+Para usar o fluxo automático, rode `npm run editar -- bruto.mp4 videos/edicao "16:9"`.
+Os comandos abaixo são a alternativa manual com scripts separados, executados
+da raiz do flow-reel:
 
 ```bash
 node scripts/validar-perfil.mjs gravado
@@ -427,3 +446,34 @@ Publicar é público. O skill **nunca** publica sem ordem explícita ("poste ago
   usar caminhos absolutos ou relativos à raiz do flow-reel; não dependem do cwd.
 - O teste desta revisão foi executado em Windows com clone limpo. A matriz CI está
   configurada para repetir os mesmos comandos em Windows, macOS e Linux.
+
+## Teste do fluxo automático e publicação simulada
+
+```bash
+npm test
+node tests/e2e-gravado.mjs meu-video-real.mp4 test-output/e2e-real
+```
+
+O E2E exige perfil configurado, FFmpeg, HyperFrames/Chromium e chave de Groq ou
+OpenAI. Transcreve, corta, renderiza ambos os formatos, valida duração/áudio/legenda
+e simula as duas publicações. Para testar sem chave, forneça um terceiro argumento
+com palavras de uma transcrição prévia do próprio vídeo. Nesse caso o transporte
+da API é simulado explicitamente; o relatório não afirma ter testado o provedor real.
+
+Nos publicadores, `--teste` é **simulação local**, não um sandbox das redes:
+não usa tokens nem cria posts. Instagram testa container, processamento e publicação
+com URLs fictícias, sem baixar mídia remota. LinkedIn lê o binário local e simula
+registro, upload, processamento e publicação. Relatórios JSON ficam ao lado do texto
+com sufixos `.instagram-teste.json` e `.linkedin-teste.json`, sem segredos.
+
+```bash
+node scripts/publicar-instagram.mjs https://example.invalid/video.mp4 https://example.invalid/capa.jpg texto.txt --teste
+node scripts/publicar-linkedin-video.mjs final.mp4 texto.txt "Teste local" --teste
+```
+
+A trava `.supabase-session.json.lock` registra PID e identificador do dono. Na
+próxima renovação, recupera trava com mais de cinco minutos ou processo inexistente.
+Trava recente ativa é respeitada. Auth tem timeout de dois minutos; um dono que
+perdeu a trava não grava a sessão nem remove a trava substituta. Travas legadas
+vazias são recuperadas por idade.
+

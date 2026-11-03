@@ -1,4 +1,4 @@
-/** Edição local inicial: exporta MP4, capa e projeto HyperFrames sem APIs. */
+/** Edição gravada: transcrição opcional automática, cortes, motions e legenda. */
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
@@ -83,7 +83,7 @@ export async function editarGravado(entrada, pasta, { formato, cortarSilencio = 
 }
 
 async function main() {
-  const ajuda = "Uso: npm run editar -- <bruto.mp4> <pasta-nova> [9:16|16:9] [--cortar-silencio] [--palavras palavras.json] [--transcritor auto|groq|openai|nenhum]\nSem palavras fornecidas, transcreve com a chave disponível. Cortes são opcionais; palavras fornecidas correspondem ao vídeo já cortado.";
+  const ajuda = "Uso: npm run editar -- <bruto.mp4> <pasta-nova> [9:16|16:9] [--cortar-silencio] [--palavras palavras.json] [--transcritor auto|groq|openai|nenhum] [--sem-motions]\nSem palavras fornecidas, transcreve com a chave disponível. Cortes são opcionais; palavras fornecidas correspondem ao vídeo já cortado. Renderiza HyperFrames por padrão; --sem-motions mantém a exportação leve.";
   const args = process.argv.slice(2);
   if (args.includes("--help")) { console.log(ajuda); return; }
   const [entrada, pasta, ...opcionais] = args;

@@ -11,9 +11,9 @@ const html = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>
 export function destaques(palavras, duracao) {
   const saida = []; let proximo = 0;
   for (let i = 0; i < palavras.length; i++) {
-    if (palavras[i].inicio < proximo || palavras[i].inicio >= duracao - 0.5) continue;
+    if (palavras[i].inicio < proximo || palavras[i].inicio > duracao - 2.5) continue;
     const grupo = palavras.slice(i, i + 6).filter(p => p.inicio < duracao);
-    const inicio = grupo[0].inicio, fim = Math.min(duracao, Math.max(inicio + 2, grupo.at(-1).fim));
+    const inicio = grupo[0].inicio, fim = Math.min(duracao, Math.max(inicio + 2.5, grupo.at(-1).fim));
     saida.push({ texto: grupo.map(p => p.texto).join(' '), inicio, fim });
     proximo = fim + 4;
   }
@@ -31,7 +31,8 @@ export function templateGravado({ formato, duracao, palavras = [], estilo }) {
     return `tl.fromTo('#card-${i}', {opacity:0,y:24}, {opacity:1,y:0,duration:${d},ease:'power2.out',immediateRender:false}, ${p.inicio});
 tl.to('#card-${i}', {opacity:0,y:-12,duration:${d},ease:'power2.in'}, ${p.fim-d});`;
   }).join('\n');
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><script src="assets/gsap.min.js"></script><style>
+  const variaveis = html(JSON.stringify(itens.map((p,i) => ({id:`destaque-${i}`,type:'string',label:`Destaque ${i+1}`,default:p.texto}))));
+  return `<!doctype html><html lang="pt-BR" data-composition-variables="${variaveis}"><head><meta charset="UTF-8"><script src="assets/gsap.min.js"></script><style>
 @font-face{font-family:FlowTitle;src:url('assets/fonts/${html(basename(estilo.fontes.titulo.arquivo))}');font-weight:700}
 *{box-sizing:border-box}html,body{margin:0;width:${w}px;height:${h}px;overflow:hidden;background:#000}
 #root{position:relative;width:100%;height:100%;color:white;font-family:FlowTitle,sans-serif}

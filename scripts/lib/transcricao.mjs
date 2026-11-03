@@ -16,9 +16,9 @@ export function validarPalavras(lista, duracao) {
   if (!Array.isArray(lista)) throw new Error('Transcrição sem lista de palavras.');
   let anterior = 0;
   return lista.map(p => {
-    if (typeof p.texto !== 'string' || !p.texto.trim() || !Number.isFinite(p.inicio) || !Number.isFinite(p.fim) || p.inicio < 0 || p.fim <= p.inicio || p.inicio < anterior) throw new Error('Transcrição contém palavra ou tempos inválidos.');
+    if (typeof p.texto !== 'string' || !p.texto.trim() || !Number.isFinite(p.inicio) || !Number.isFinite(p.fim) || p.inicio < 0 || p.fim < p.inicio || p.inicio < anterior) throw new Error('Transcrição contém palavra ou tempos inválidos.');
     anterior = p.inicio;
-    return { texto: p.texto.trim(), inicio: p.inicio, fim: Math.min(p.fim, duracao) };
+    return { texto: p.texto.trim(), inicio: p.inicio, fim: Math.min(Math.max(p.fim,p.inicio+0.02), duracao) };
   }).filter(p => p.inicio < duracao && p.fim > p.inicio);
 }
 

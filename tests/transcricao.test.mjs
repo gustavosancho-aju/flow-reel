@@ -34,3 +34,6 @@ test('cortes mantêm palavras, removem pausas e recalculam legenda na nova linha
   assert.ok(Math.abs(r.duracao - 2.4) < 0.001);
   assert.deepEqual(planejarCortes([], 6).intervalos, [[0,6]]);
 });
+test('palavra com duração zero do Whisper recebe intervalo mínimo sem sumir', () => {
+  assert.deepEqual(validarPalavras([{texto:'a',inicio:1,fim:1}],2),[{texto:'a',inicio:1,fim:1.02}]);
+});

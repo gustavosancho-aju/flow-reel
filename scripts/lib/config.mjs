@@ -37,7 +37,10 @@ function carregarEnv() {
     resolve(RAIZ, ".env"),
   ];
   const env = {};
-  for (const c of candidatos.reverse()) if (existsSync(c)) Object.assign(env, lerEnv(c));
+  for (const c of candidatos.reverse()) if (existsSync(c)) {
+    // O modelo vazio gerado no onboarding não mascara chaves do .env.
+    for (const [k, v] of Object.entries(lerEnv(c))) if (v) env[k] = v;
+  }
   for (const [k, v] of Object.entries(process.env)) if (v && !env[k]) env[k] = v;
   return env;
 }

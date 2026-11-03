@@ -43,6 +43,7 @@ export function adquirirTrava(lock, { agora = Date.now, existe = processoExiste,
       try {
         const antes = statSync(lock), conteudo = readFileSync(lock, 'utf8');
         let outro; try { outro = JSON.parse(conteudo); } catch { outro = {}; }
+        if (!outro || typeof outro !== 'object') outro = {};
         const velho = agora() - antes.mtimeMs > maxIdade;
         const morto = Number.isInteger(outro.pid) && outro.pid > 0 && !existe(outro.pid);
         if (!velho && !morto) throw new Error('Renovação Supabase em andamento; aguarde o outro upload e tente novamente.');

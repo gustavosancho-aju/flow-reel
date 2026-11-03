@@ -23,3 +23,7 @@ test('não apaga trava de outro dono na liberação tardia', t => {
 test('trava recém-criada incompleta não é considerada abandonada', t => {
   const p=fixture(t);writeFileSync(p,'');assert.throws(()=>adquirirTrava(p),/em andamento/);
 });
+test('trava legada com conteúdo null é recuperada por idade', t => {
+  const p=fixture(t);writeFileSync(p,'null');const antigo=new Date(Date.now()-301000);utimesSync(p,antigo,antigo);
+  const lock=adquirirTrava(p);assert.equal(lock.conferir(),true);lock.liberar();
+});

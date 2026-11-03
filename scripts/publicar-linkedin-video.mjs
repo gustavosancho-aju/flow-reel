@@ -14,9 +14,13 @@
  */
 import { readFileSync } from "fs";
 import { env, exigir } from "./lib/config.mjs";
+import { criarSimulador } from './lib/publicacao-teste.mjs';
+const teste = process.argv.includes('--teste');
+const simulador = teste ? criarSimulador('linkedin') : null;
+const fetch = simulador ? simulador.fetch : globalThis.fetch;
 
 
-const [, , videoPath, textoPath, titulo = "Reel"] = process.argv;
+const [videoPath, textoPath, titulo = "Reel"] = process.argv.slice(2).filter(x=>x!=='--teste');
 if (!videoPath || !textoPath) {
   console.error("Uso: node publicar-linkedin-video.mjs <video.mp4> <texto.txt> [titulo]");
   process.exit(1);
@@ -24,8 +28,9 @@ if (!videoPath || !textoPath) {
 
 // A antiga opção LINKEDIN_TOKEN_FROM_SUPABASE foi removida. Não consulta tabelas
 // de segredos nem utiliza credencial administrativa de outro serviço.
-exigir("LINKEDIN_ACCESS_TOKEN");
-const TOKEN = env.LINKEDIN_ACCESS_TOKEN;
+if (!teste) exigir("LINKEDIN_ACCESS_TOKEN");
+const TOKEN = teste ? 'token-teste' : env.LINKEDIN_ACCESS_TOKEN;
+if (teste) console.log('SIMULAÇÃO LOCAL: nenhum post será enviado ao LinkedIn.');
 const H = { Authorization: `Bearer ${TOKEN}`, "X-Restli-Protocol-Version": "2.0.0", "Content-Type": "application/json" };
 
 const info = await (await fetch("https://api.linkedin.com/v2/userinfo", { headers: H })).json();
@@ -63,7 +68,7 @@ console.log("3/4 aguardando o processamento do vídeo...");
 const id = asset.split(":").pop();
 let pronto = false;
 for (let i = 0; i < 40; i++) {
-  await new Promise((r) => setTimeout(r, 5000));
+  await new Promise((r) => setTimeout(r, teste ? 0 : 5000));
   const s = await fetch(`https://api.linkedin.com/v2/assets/${id}`, { headers: H });
   const sj = await s.json().catch(() => ({}));
   const st = sj.recipes?.[0]?.status;
@@ -90,4 +95,5 @@ const post = await fetch("https://api.linkedin.com/v2/ugcPosts", {
 });
 const pid = post.headers.get("x-restli-id") || (await post.json().catch(() => ({}))).id;
 if (!post.ok) throw new Error(`ugcPosts ${post.status}: ${(await post.text().catch(() => "")).slice(0, 300)}`);
-console.log("\nPUBLICADO:", `https://www.linkedin.com/feed/update/${pid}/`);
+console.log(teste ? '\nSIMULADO: simulacao-local://linkedin/post-teste' : `\nPUBLICADO: https://www.linkedin.com/feed/update/${pid}/`);
+if (teste) simulador.salvar(`${textoPath}.linkedin-teste.json`);

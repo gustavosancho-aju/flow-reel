@@ -10,18 +10,24 @@
  */
 import { readFileSync } from "fs";
 import { env, estilo, perfil, ffColor, assColor, rgb, exigir } from "./lib/config.mjs";
+import { criarSimulador } from './lib/publicacao-teste.mjs';
+const teste = process.argv.includes('--teste');
+const simulador = teste ? criarSimulador('instagram') : null;
+const fetch = simulador ? simulador.fetch : globalThis.fetch;
 
 
-const TOKEN = env.META_ACCESS_TOKEN;
-const IG = (env.INSTAGRAM_BUSINESS_ACCOUNT_ID || "").replace(/[^0-9]/g, "");
+const TOKEN = teste ? 'token-teste' : env.META_ACCESS_TOKEN;
+const IG = teste ? '123' : (env.INSTAGRAM_BUSINESS_ACCOUNT_ID || "").replace(/[^0-9]/g, "");
 const API = "https://graph.facebook.com/v21.0";
 
-const [, , videoUrl, coverUrl, captionPath] = process.argv;
+const [videoUrl, coverUrl, captionPath] = process.argv.slice(2).filter(x=>x!=='--teste');
 if (!videoUrl || !coverUrl || !captionPath) {
   console.error("Uso: node publicar-instagram.mjs <video_url> <cover_url> <legenda.txt>");
   process.exit(1);
 }
 const caption = readFileSync(captionPath, "utf-8").trim();
+if (!teste) exigir('META_ACCESS_TOKEN','INSTAGRAM_BUSINESS_ACCOUNT_ID');
+if (teste) console.log('SIMULAÇÃO LOCAL: nenhum post será enviado ao Instagram.');
 
 async function post(path, params) {
   const body = new URLSearchParams({ ...params, access_token: TOKEN });
@@ -44,7 +50,7 @@ console.log(`    container: ${container.id}`);
 console.log("2/3 aguardando processamento do vídeo...");
 let pronto = false;
 for (let i = 0; i < 40; i++) {
-  await new Promise((r) => setTimeout(r, 5000));
+  await new Promise((r) => setTimeout(r, teste ? 0 : 5000));
   const r = await fetch(`${API}/${container.id}?fields=status_code,status&access_token=${TOKEN}`);
   const d = await r.json();
   const s = d.status_code;
@@ -62,5 +68,6 @@ console.log(`    media id: ${publicado.id}`);
 
 const perm = await fetch(`${API}/${publicado.id}?fields=permalink,media_type&access_token=${TOKEN}`);
 const pd = await perm.json();
-console.log(`\nPUBLICADO: ${pd.permalink ?? "(sem permalink)"}`);
+console.log(`\n${teste ? 'SIMULADO' : 'PUBLICADO'}: ${pd.permalink ?? "(sem permalink)"}`);
 console.log(`tipo: ${pd.media_type ?? "?"}`);
+if (teste) simulador.salvar(`${captionPath}.instagram-teste.json`);

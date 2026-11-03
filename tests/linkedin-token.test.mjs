@@ -9,7 +9,7 @@ test("LinkedIn exige token próprio e ignora o antigo modo Supabase antes de qua
   const raiz = mkdtempSync(join(tmpdir(), "flow-linkedin-test-"));
   t.after(() => rmSync(raiz, { recursive: true, force: true }));
   mkdirSync(join(raiz, "scripts/lib"), { recursive: true }); mkdirSync(join(raiz, "perfil"));
-  for (const nome of ["publicar-linkedin-video.mjs", "lib/config.mjs", "lib/raiz.mjs"]) {
+  for (const nome of ["publicar-linkedin-video.mjs", "lib/config.mjs", "lib/raiz.mjs", "lib/publicacao-teste.mjs"]) {
     copyFileSync(new URL(`../scripts/${nome}`, import.meta.url), join(raiz, "scripts", nome));
   }
   for (const nome of ["perfil", "estilo"]) writeFileSync(join(raiz, `perfil/${nome}.exemplo.json`), "{}");

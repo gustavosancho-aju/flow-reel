@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { argumentosAutoEditor } from "../scripts/lib/corte.mjs";
+import { argumentosAutoEditor, argumentosFiltroArquivo } from "../scripts/lib/corte.mjs";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
@@ -27,4 +27,9 @@ test("rejeita tempos e limiares inválidos antes de iniciar processo", () => {
   for (const valores of [[-1,0.1,0.025],[0.35,NaN,0.025],[0.35,0.1,0],[0.35,0.1,1.1]]) {
     assert.throws(() => argumentosAutoEditor("a.mp4","b.mp4",...valores), /Corte inválido/);
   }
+});
+test("arquivo de filtro é compatível com FFmpeg antigo e FFmpeg 9", () => {
+  const caminho = "pasta com espaços/filtro.txt";
+  assert.deepEqual(argumentosFiltroArquivo(caminho, "-filter_complex_script <filename> read graph"), ["-filter_complex_script", caminho]);
+  assert.deepEqual(argumentosFiltroArquivo(caminho, "-filter_complex <graph> create graph"), ["-/filter_complex", caminho]);
 });

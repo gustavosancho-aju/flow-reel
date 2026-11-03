@@ -6,6 +6,7 @@
  */
 import { execFileSync, spawnSync } from "child_process";
 import { writeFileSync } from "fs";
+import { argumentosFiltroArquivo } from "./lib/corte.mjs";
 
 const [, , input, output, minSilArg, padArg] = process.argv;
 if (!input || !output) {
@@ -95,10 +96,11 @@ const filtro = `${partes};${refs}concat=n=${trechos.length}:v=1:a=1[v][a]`;
 
 const filtroPath = output.replace(/\.mp4$/, "-filtro.txt");
 writeFileSync(filtroPath, filtro, "utf-8");
+const ajuda = execFileSync("ffmpeg", ["-hide_banner", "-h", "long"], { encoding: "utf8", maxBuffer: 4 * 1024 * 1024 });
 
 execFileSync("ffmpeg", [
   "-y", "-v", "error", "-i", input,
-  "-filter_complex_script", filtroPath,
+  ...argumentosFiltroArquivo(filtroPath, ajuda),
   "-map", "[v]", "-map", "[a]",
   "-c:v", "libx264", "-crf", "27", "-preset", "slow", "-pix_fmt", "yuv420p",
   "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",

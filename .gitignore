@@ -3,14 +3,17 @@
 .env.local
 .supabase-session*
 /test-output/
-perfil/perfil.json
-perfil/estilo.json
+perfil/*.json
+!perfil/*.exemplo.json
 perfil/referencias/
 perfil/previa/
 perfil/fotos/
 perfil/fontes/
+perfil/cartela.png
+perfil/cartela-trabalho/
 
 # Saídas de trabalho
+/videos/
 *.mp4
 *.mov
 *.wav

@@ -38,7 +38,7 @@ function carregarEnv() {
   ];
   const env = {};
   for (const c of candidatos.reverse()) if (existsSync(c)) Object.assign(env, lerEnv(c));
-  for (const [k, v] of Object.entries(process.env)) if (v && !(k in env)) env[k] = v;
+  for (const [k, v] of Object.entries(process.env)) if (v && !env[k]) env[k] = v;
   return env;
 }
 

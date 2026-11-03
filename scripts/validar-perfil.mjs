@@ -9,8 +9,7 @@ import { resolve } from "path";
 import { pathToFileURL } from "node:url";
 import { RAIZ } from "./lib/raiz.mjs";
 
-export function validarPerfil(raiz = RAIZ, modo = "avatar") {
-  if (!["avatar", "gravado"].includes(modo)) throw new Error("Modo inválido: use avatar ou gravado.");
+export function validarPerfil(raiz = RAIZ, modo) {
   const faltando = [];
   const ler = (arq) => {
     const p = resolve(raiz, arq);
@@ -21,6 +20,8 @@ export function validarPerfil(raiz = RAIZ, modo = "avatar") {
 
   const perfil = ler("perfil/perfil.json");
   const estilo = ler("perfil/estilo.json");
+  modo ??= perfil?.modo ?? "avatar";
+  if (!["avatar", "gravado"].includes(modo)) throw new Error("Modo inválido: use avatar ou gravado.");
 
   if (!perfil) faltando.push("perfil/perfil.json");
   else {
@@ -51,7 +52,7 @@ export function validarPerfil(raiz = RAIZ, modo = "avatar") {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
-    const resultado = validarPerfil(RAIZ, process.argv[2] ?? "avatar");
+    const resultado = validarPerfil(RAIZ, process.argv[2]);
     console.log(JSON.stringify(resultado));
     process.exitCode = resultado.pronto ? 0 : 2;
   } catch (erro) {

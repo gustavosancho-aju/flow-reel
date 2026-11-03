@@ -28,6 +28,27 @@ skill (onde está este arquivo).
 
 ## Passo 0: Primeiro uso ou pedido normal?
 
+Antes de começar num clone novo, rode `npm run diagnostico` (Node.js 22+ e
+FFmpeg/ffprobe com drawtext, libass/subtitles, libx264 e AAC). Não procure arquivos
+nem credenciais em pastas de outro projeto ou na máquina do autor.
+
+A configuração pode ser criada com `npm run configurar`. Se a pessoa escolher
+explicitamente `--estilo-basico`, use o estilo incluído, registrado em
+`origem.aprovadoSemReferencias`; não alegue que ele foi extraído de referências.
+As fontes redistribuíveis vêm em `assets/fonts/`, com licenças OFL. Caminhos de fonte
+relativos em `estilo.json` são resolvidos a partir da raiz do clone.
+O preset básico permite começar; a extração com 4 referências continua sendo o
+fluxo de personalização. O configurador não sobrescreve perfil, estilo ou chaves.
+
+Para uma primeira exportação sem APIs, use
+`npm run editar -- bruto.mp4 videos/primeira-edicao "9:16"` (ou `"16:9"`). Esse
+comando exporta vídeo/capa e prepara o template, sem renderizar os motions de exemplo.
+Silêncio só é cortado com `--cortar-silencio`; legendas só são queimadas ao fornecer
+`--palavras palavras.json` com os tempos do vídeo limpo. A voz permanece original,
+publicação é opcional e cada pessoa configura as próprias contas. Para verificar a
+instalação sem mídia pessoal nem chaves, use `npm run exemplo` após configurar.
+
+
 Identifique o modo antes da validação: **avatar** (padrão atual) ou **gravado**
 (a pessoa fornece um vídeo bruto). No gravado, use `node scripts/validar-perfil.mjs gravado`:
 nome e nicho continuam necessários; avatar, cenário e figurino do Flow não são exigidos.
@@ -87,7 +108,8 @@ ele não enxerga você identifica olhando:
 Regras:
 1. **Fonte não se adivinha pela imagem.** Proponha a mais parecida e **pergunte o
    nome exato e o arquivo** (`.ttf` ou `.otf`, em `perfil/fontes/` ou instalado no
-   sistema). Sem arquivo da fonte, a legenda cai em Arial sem avisar (ver armadilhas).
+   sistema). Para começar, ofereça as fontes incluídas. Para uma fonte personalizada,
+   confirme o arquivo e seu caminho (relativo ao clone ou absoluto).
 2. **Cor é medida, não chutada.** Use as cores de `analise.json` como base e
    confirme o hex de destaque com a pessoa (a paleta por quantização é aproximada).
 3. Se os 4 vídeos divergirem (ex.: 2 com legenda grande, 2 sem), **não faça média**:

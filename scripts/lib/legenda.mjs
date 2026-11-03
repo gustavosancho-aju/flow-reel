@@ -39,12 +39,13 @@ export function agruparPalavras(palavras, porCartela = 3, pausaMax = 0.35) {
 }
 
 
-export function gerarLegenda(brutas, estilo, { formato: formatoArg, suprimir = [] } = {}) {
+export function gerarLegenda(brutas, estilo, { formato: formatoArg, suprimir = [], duracao = Infinity } = {}) {
+  if (!(duracao > 0)) throw new Error("Duração da legenda deve ser positiva.");
   const formato = obterFormato(formatoArg);
   // trechos cobertos por motion de tela cheia: a peça já mostra as palavras,
   // repetir na legenda polui e duplica a mesma mensagem
   const dentroDeMotion = (p) => suprimir.some(([a, b]) => p.inicio >= a - 0.05 && p.inicio <= b);
-  const palavras = normalizar(brutas).filter((p) => !dentroDeMotion(p));
+  const palavras = normalizar(brutas).filter((p) => p.inicio < duracao && !dentroDeMotion(p));
 
   const L = estilo.legenda || {};
   const FL = estilo.fontes.legenda;
@@ -102,7 +103,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     const inicio = grupo[0].inicio;
     // segura até a próxima cartela, sem invadi-la (duas na tela ao mesmo tempo)
     const teto = proximoGrupo ? proximoGrupo[0].inicio - 0.02 : Infinity;
-    const fim = Math.min(grupo[grupo.length - 1].fim + 0.12, teto);
+    const fim = Math.min(grupo[grupo.length - 1].fim + 0.12, teto, Math.floor(duracao * 100) / 100);
+    if (fim <= inicio) continue;
     const texto = grupo.map((p) => limpar(p.texto)).join(" ");
     // pop curto só na entrada — não revela palavra a palavra
     const B = String.fromCharCode(92);

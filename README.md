@@ -6,20 +6,21 @@ de silêncio, edição com motions no seu estilo, legenda, voz clonada (opcional
 capa e publicação. Também edita **vídeos já gravados**, como visitas a imóveis e
 depoimentos, em **9:16 (vertical)** ou **16:9 (horizontal)**, sem gerar cenas no Flow.
 
-O que o torna seu: na **primeira vez** o skill pede **4 vídeos de referência**,
+Para personalizar a edição, o skill pede **4 vídeos de referência**,
 extrai deles cores, fontes, legenda, layout e elementos gráficos, confirma com
 você e grava tudo em `perfil/estilo.json`. Os Reels seguintes já saem com essa cara.
+Também é possível escolher explicitamente o estilo básico incluído e começar sem referências.
 
 ## O que você precisa
 
 | Item | Para quê | Obrigatório |
 |---|---|---|
-| [Claude Code](https://claude.com/claude-code) | roda o skill | sim |
-| Node.js 18+ e [ffmpeg](https://ffmpeg.org) no PATH | scripts, cortes, legenda, capa | sim |
+| [Claude Code](https://claude.com/claude-code) | roda o skill `/flow-reel` | para o skill; os scripts funcionam no terminal |
+| [Node.js 22+](https://nodejs.org/en/download) e [FFmpeg/ffprobe](https://ffmpeg.org/download.html) no PATH | scripts, cortes, legenda, capa | sim |
 | Conta do Google Flow com créditos e um **avatar seu** criado | geração das cenas | só no modo avatar |
 | Extensão Claude in Chrome | dirigir o Flow no navegador | só no modo avatar |
 | OpenAI e Groq | conferência da fala e timestamps, respectivamente | conforme scripts usados |
-| [HyperFrames](https://hyperframes.heygen.com) (`npx`) | edição com motions | sim |
+| [HyperFrames](https://hyperframes.heygen.com) (`npx`) | edição com motions | quando usar motions; requer internet na primeira execução |
 | ElevenLabs (voz clonada + permissão "Speech to Speech") | trocar pela sua voz | opcional |
 | Instagram (token Meta) e Supabase privado com URLs assinadas | publicar pela API | opcional |
 | [auto-editor 31.x](https://auto-editor.com/installing) | motor alternativo de corte | opcional |
@@ -28,14 +29,86 @@ você e grava tudo em `perfil/estilo.json`. Os Reels seguintes já saem com essa
 Custos do Flow (Omni 1.1 Flash, 720p, 8s): 12 créditos por cena; um Reel de 7 cenas
 usa 84 créditos. O modo gravado não consome créditos do Flow.
 
-## Instalação
+## Instalação e primeiro vídeo local
 
-Dentro do projeto onde você quer usar:
+O clone inclui fontes Poppins e IBM Plex Mono com suas licenças OFL. Não é
+necessário copiar fontes, vídeos, perfil, `.env` ou ferramentas da máquina do autor.
+
+1. Instale Node.js **22 ou superior**, Git e uma distribuição completa de FFmpeg
+   que inclua `ffprobe`, `drawtext`, `subtitles` (libass), `libx264` e AAC.
+   No Windows, coloque a pasta `bin` do FFmpeg no PATH e reabra o terminal.
+   No macOS, `brew install ffmpeg`; em Debian/Ubuntu, `sudo apt install ffmpeg`.
+   Os [downloads oficiais](https://ffmpeg.org/download.html) indicam as distribuições
+   disponíveis. O diagnóstico abaixo informa exatamente o que faltar.
+2. Clone e verifique as dependências (os comandos npm funcionam em PowerShell,
+   macOS e Linux):
+
+```bash
+git clone https://github.com/gustavosancho-aju/flow-reel.git
+cd flow-reel
+npm install
+npm run diagnostico
+```
+
+3. Configure seu perfil com o assistente interativo:
+
+```bash
+npm run configurar
+```
+
+Ou use a configuração direta para vídeo gravado, escolhendo o estilo básico:
+
+```bash
+npm run configurar -- --modo gravado --nome "Seu nome real" --nicho "Seu assunto" --estilo-basico
+node scripts/validar-perfil.mjs
+npm run exemplo
+```
+
+O exemplo gera a própria imagem, um tom de áudio e palavras de demonstração;
+exporta `test-output/exemplo-local/final.mp4`, capa, cartela de legenda e template
+HyperFrames. Não transcreve uma fala nem chama APIs. Em nova execução, escolha
+outra pasta: `npm run exemplo -- test-output/outro-exemplo "16:9"`.
+
+4. Para começar a editar seu próprio vídeo:
+
+```bash
+npm run editar -- "caminho/do/bruto.mp4" "videos/minha-edicao" "9:16"
+```
+
+Esse comando prepara o vídeo, mantém a voz em 1x, exporta `final.mp4`, cria `capa.jpg`
+e prepara `edicao/index.html` com fontes e mídia locais. A pasta de saída precisa
+ser nova ou vazia. O silêncio só é cortado quando você acrescenta
+`--cortar-silencio`, para preservar cenas sem fala em visitas e demonstrações.
+Para horizontal, use `"16:9"`. A entrada precisa ter áudio e imagem.
+
+Para queimar legendas, acrescente `--palavras caminho/palavras.json`, uma lista
+`[{"texto":"Olá","inicio":0.2,"fim":0.6}]` cujos tempos correspondam ao vídeo
+**após os cortes**. Pode ser produzida por um transcritor local de sua escolha ou
+por `timestamps-palavras.mjs` com Groq. O comando não transcreve automaticamente.
+Sem esse argumento, a exportação inicial não tem legendas. A capa usa um título
+neutro; personalize `L1`, `L2`, `L3` e `SUB` como documentado no skill.
+
+O template HyperFrames é um ponto de partida. Personalize textos, painéis e os
+respectivos tempos para a sua fala; o exemplo do template contém 29,35s. Instale
+os recursos HyperFrames quando for usar motions. A exportação local inicial usa
+FFmpeg e não exige essa instalação. Veja o fluxo completo no [SKILL.md](SKILL.md).
+
+`configurar` cria `perfil/perfil.json`, `.env.local` e, se você escolher
+`--estilo-basico`, `perfil/estilo.json`. Arquivos existentes são preservados.
+A voz inicial é a original e a publicação fica desativada; você pode habilitar
+voz clonada e redes depois, com suas próprias contas. Sem `--estilo-basico`, siga
+o onboarding de referências para criar sua identidade visual. Os arquivos `.env`
+começam sem chaves; edição/exportação local não exige preenchê-los.
+
+### Instalar como skill
+
+Para usar `/flow-reel`, clone no projeto do Claude Code:
 
 ```bash
 git clone https://github.com/gustavosancho-aju/flow-reel.git .claude/skills/flow-reel
 cd .claude/skills/flow-reel
-cp .env.exemplo .env.local      # preencha só os módulos que for usar
+npm install
+npm run diagnostico
 ```
 
 Para usar em todos os projetos, clone em `~/.claude/skills/flow-reel`.
@@ -59,7 +132,7 @@ No macOS/Linux: `ln -s /caminho/do/flow-reel ~/.claude/skills/flow-reel`.
 
 Abra o Claude Code e peça, por exemplo: `/flow-reel quero um Reel sobre <tema>`.
 
-Como ainda não existe `perfil/estilo.json`, o skill faz o onboarding:
+Se ainda não escolheu um estilo básico com `npm run configurar`, o skill faz o onboarding de referências:
 
 1. **Pede 4 vídeos de referência** (caminhos de arquivo, ou links se você tiver o
    `yt-dlp`). Dica: um com legenda marcante, um com painéis animados, um com
@@ -191,7 +264,7 @@ alternativa, repita com `ffmpeg`. [Opções utilizadas](https://auto-editor.com/
 
 Copie `.env.exemplo` para **`.env.local` na raiz do próprio flow-reel**. Os scripts
 leem somente `<flow-reel>/.env.local` e `<flow-reel>/.env`, nessa prioridade;
-`process.env` fornece valores para nomes ausentes nesses arquivos. Arquivos da
+`process.env` fornece valores para nomes ausentes ou vazios nesses arquivos. Arquivos da
 pasta onde o comando é executado, `FLOW_REEL_ENV` e `perfil.envArquivo` são ignorados. Arquivos `.env`
 não interpretam expressões de shell; coloque cada valor em uma linha, sem comentários
 na mesma linha. Não cole credenciais na conversa.
@@ -287,7 +360,9 @@ duas renovações consecutivas com refresh token rotacionado e compara o SHA-256
 vídeo/capa baixados pelas URLs assinadas. Isso testa o cliente com arquivos reais;
 não valida as políticas RLS de um projeto Supabase remoto.
 
-Licença [MIT](LICENSE).
+Código sob licença [MIT](LICENSE). As fontes em `assets/fonts/` mantêm suas
+licenças SIL OFL 1.1, incluídas junto aos arquivos; as licenças também são copiadas
+para os projetos que usam essas fontes.
 
 O LinkedIn lê somente `LINKEDIN_ACCESS_TOKEN`. O antigo modo
 `LINKEDIN_TOKEN_FROM_SUPABASE` foi retirado; o script não consulta tabelas de segredos.
@@ -300,7 +375,8 @@ perfil/
   perfil.exemplo.json     quem é você, avatar, voz, publicação
   estilo.exemplo.json     cores, fontes, legenda, layout, elementos
   perfil.json, estilo.json, referencias/, fotos/, fontes/   SEUS (ficam fora do git)
-scripts/                  um script por etapa; lib/config.mjs lê env, perfil e estilo
+scripts/                  configuração, diagnóstico, edição local e um script por etapa
+assets/fonts/             fontes redistribuíveis, licenças OFL e origem/SHA-256
 tests/                    testes de perfil, legenda, corte e segurança
 package.json              npm test (executor nativo do Node)
 LICENSE                   licença MIT
@@ -329,4 +405,7 @@ Publicar é público. O skill **nunca** publica sem ordem explícita ("poste ago
   use o fundo único (lento, roda em CPU).
 - O avatar às vezes repete palavras no fim da cena; o Passo 4 (retranscrição)
   existe para pegar isso, mas vale uma escuta final.
-- Testado no Windows. Em macOS/Linux, ajuste os caminhos de fonte no `estilo.json`.
+- Fontes padrão são incluídas e resolvidas a partir do clone. Fontes próprias podem
+  usar caminhos absolutos ou relativos à raiz do flow-reel; não dependem do cwd.
+- O teste desta revisão foi executado em Windows com clone limpo. A matriz CI está
+  configurada para repetir os mesmos comandos em Windows, macOS e Linux.

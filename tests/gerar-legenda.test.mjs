@@ -51,6 +51,11 @@ test("cartelas não invadem o início da próxima", () => {
   assert.match(linhas[0], /0:00:00.00,0:00:00.18/);
   assert.match(linhas[1], /0:00:00.20,0:00:00.52/);
 });
+test("exportação com duração conhecida não deixa legenda além do vídeo", () => {
+  const ass = gerarLegenda([p("fim",0.5,0.99)], estilo, { duracao: 1 });
+  assert.match(eventos(ass)[0], /0:00:00.50,0:00:01.00/);
+  assert.throws(() => gerarLegenda([], estilo, { duracao: 0 }), /Duração/);
+});
 test("CLI gera ASS a partir de arquivo, inclusive SUPRIMIR", (t) => {
   const temp = mkdtempSync(join(tmpdir(), "flow-legenda-test-"));
   t.after(() => rmSync(temp, { recursive: true, force: true }));

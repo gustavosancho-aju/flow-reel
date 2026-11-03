@@ -66,10 +66,10 @@ test("config lê apenas env da raiz, ignora cwd, FLOW_REEL_ENV e perfil.envArqui
   writeFileSync(join(dir, ".env.local"), "FLOW_REEL_TEST_ENV=foreign\nFLOW_REEL_TEST_FOREIGN=leaked");
   writeFileSync(join(raiz, "perfil/perfil.json"), JSON.stringify({ envArquivo: join(dir, ".env.local") }));
   writeFileSync(join(raiz, ".env"), "FLOW_REEL_TEST_ENV=repo");
-  writeFileSync(join(raiz, ".env.local"), "FLOW_REEL_TEST_ENV=local");
-  const script = `import {env} from ${JSON.stringify(pathToFileURL(join(raiz, "scripts/lib/config.mjs")).href)}; console.log(JSON.stringify({chosen:env.FLOW_REEL_TEST_ENV,foreign:env.FLOW_REEL_TEST_FOREIGN}));`;
-  const childEnv = { ...process.env, FLOW_REEL_ENV: join(dir, ".env.local") };
+  writeFileSync(join(raiz, ".env.local"), "FLOW_REEL_TEST_ENV=local\nFLOW_REEL_TEST_EMPTY=");
+  const script = `import {env} from ${JSON.stringify(pathToFileURL(join(raiz, "scripts/lib/config.mjs")).href)}; console.log(JSON.stringify({chosen:env.FLOW_REEL_TEST_ENV,foreign:env.FLOW_REEL_TEST_FOREIGN,fallback:env.FLOW_REEL_TEST_EMPTY}));`;
+  const childEnv = { ...process.env, FLOW_REEL_ENV: join(dir, ".env.local"), FLOW_REEL_TEST_EMPTY: "process" };
   delete childEnv.FLOW_REEL_TEST_FOREIGN;
   const result = execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: dir, env: childEnv, encoding: "utf8" });
-  assert.deepEqual(JSON.parse(result), { chosen: "local" });
+  assert.deepEqual(JSON.parse(result), { chosen: "local", fallback: "process" });
 });

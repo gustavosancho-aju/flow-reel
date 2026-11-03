@@ -3,6 +3,8 @@
  */
 import { spawnSync } from "child_process";
 import { chmodSync, copyFileSync, existsSync, rmSync } from "fs";
+import { resolverFonte } from "./fontes.mjs";
+import { dirname, resolve } from "node:path";
 
 /**
  * Copia uma fonte para a pasta de trabalho. Fontes instaladas no Windows vêm somente
@@ -10,12 +12,18 @@ import { chmodSync, copyFileSync, existsSync, rmSync } from "fs";
  * a escrita depois.
  */
 export function copiarFonte(origem, destino) {
+  origem = resolverFonte(origem);
+  if (resolve(origem) === resolve(destino)) return;
   if (existsSync(destino)) {
     try { chmodSync(destino, 0o666); } catch {}
     rmSync(destino, { force: true });
   }
   copyFileSync(origem, destino);
   try { chmodSync(destino, 0o666); } catch {}
+  for (const nome of ["Poppins-OFL.txt", "IBMPlexMono-OFL.txt"]) {
+    const licenca = resolve(dirname(origem), nome);
+    if (existsSync(licenca)) copyFileSync(licenca, resolve(dirname(destino), nome));
+  }
 }
 
 /** Roda ffmpeg (-y -v error ...). Lança erro com o stderr se falhar. */

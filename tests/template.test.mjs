@@ -10,7 +10,7 @@ function fixture(t) {
   const raiz = mkdtempSync(join(tmpdir(), "flow-template-test-"));
   t.after(() => rmSync(raiz, { recursive: true, force: true }));
   for (const pasta of ["scripts/lib", "assets", "perfil"]) mkdirSync(join(raiz, pasta), { recursive: true });
-  for (const nome of ["aplicar-estilo-template.mjs", "lib/config.mjs", "lib/raiz.mjs", "lib/formato.mjs", "lib/midia.mjs"]) {
+  for (const nome of ["aplicar-estilo-template.mjs", "lib/config.mjs", "lib/raiz.mjs", "lib/formato.mjs", "lib/midia.mjs", "lib/fontes.mjs"]) {
     copyFileSync(new URL(`../scripts/${nome}`, import.meta.url), join(raiz, "scripts", nome));
   }
   for (const nome of ["edicao-template.html", "edicao-camadas.html"]) {

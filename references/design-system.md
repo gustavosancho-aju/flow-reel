@@ -19,6 +19,11 @@ Formatos: ffmpeg usa `0xRRGGBB` (`ffColor`), legenda ASS usa BGR `&H00BBGGRR&`
 
 - `titulo`, `corpo`, `legenda`: `{ familia, arquivo, peso/tamanho }`.
 - Opcionais `capaTitulo` e `capaCorpo` se a capa usar fontes diferentes do vídeo.
+- O clone inclui Poppins (regular/negrito) e IBM Plex Mono com licenças SIL OFL em
+  `assets/fonts/`; esses são os padrões para começar em qualquer sistema.
+  A entrada opcional `mono` configura a fonte do terminal.
+- Caminhos relativos em `arquivo` são resolvidos a partir da raiz do flow-reel,
+  independentemente da pasta de execução. Caminhos absolutos continuam aceitos.
 - **Sempre informe o arquivo** (`.ttf`/`.otf`). O ffmpeg/libass não resolve fonte por
   família sem fontconfig no Windows, e sem o arquivo a legenda cai em Arial sem
   avisar. Os scripts copiam o arquivo para a pasta de saída e referenciam só o nome

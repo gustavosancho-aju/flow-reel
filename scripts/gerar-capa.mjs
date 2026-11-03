@@ -41,10 +41,10 @@ const VERDE = ffColor(estilo.cores.destaque);
 const BRANCO = ffColor(estilo.cores.texto);
 const FUNDO = ffColor(estilo.cores.fundo);
 
-const L1 = process.env.L1 ?? "ESSE VÍDEO";
-const L2 = process.env.L2 ?? "EU NÃO GRAVEI";
-const L3 = process.env.L3 ?? "FOI UM COMANDO";
-const SUB = process.env.SUB ?? "feito com Claude Code";
+const L1 = process.env.L1 ?? "SEU TÍTULO";
+const L2 = process.env.L2 ?? "COMEÇA AQUI";
+const L3 = process.env.L3 ?? "SEU DESTAQUE";
+const SUB = process.env.SUB ?? "personalize a capa do seu vídeo";
 
 // O grid do perfil corta o Reel em 4:5 a partir do centro: tudo que importa
 // precisa caber entre y=285 e y=1635. O bloco de texto fica dentro disso.

@@ -14,21 +14,26 @@
   },
   "fontes": {
     "titulo": {
-      "familia": "Arial Black",
-      "arquivo": "C:/Windows/Fonts/ariblk.ttf",
-      "peso": 900
+      "familia": "Poppins",
+      "arquivo": "assets/fonts/Poppins-Bold.ttf",
+      "peso": 700
     },
     "corpo": {
-      "familia": "Arial Bold",
-      "arquivo": "C:/Windows/Fonts/arialbd.ttf",
+      "familia": "Poppins",
+      "arquivo": "assets/fonts/Poppins-Regular.ttf",
       "peso": 700
     },
     "legenda": {
-      "familia": "Arial Black",
-      "arquivo": "C:/Windows/Fonts/ariblk.ttf",
+      "familia": "Poppins",
+      "arquivo": "assets/fonts/Poppins-Bold.ttf",
       "tamanho": 32
     },
-    "_capa": "Opcional: capaTitulo e capaCorpo (mesmo formato de titulo/corpo) se a capa usar fontes diferentes do vídeo."
+    "_capa": "Opcional: capaTitulo e capaCorpo (mesmo formato de titulo/corpo) se a capa usar fontes diferentes do vídeo.",
+    "mono": {
+      "familia": "IBM Plex Mono",
+      "arquivo": "assets/fonts/IBMPlexMono-Regular.ttf",
+      "peso": 400
+    }
   },
   "legenda": {
     "palavrasPorCartela": 3,

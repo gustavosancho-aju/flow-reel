@@ -5,10 +5,11 @@
  *
  * Uso: node scripts/cartela-estilo.mjs <saida.png>
  */
-import { copyFileSync, existsSync, mkdirSync, writeFileSync } from "fs";
+import { copyFileSync, mkdirSync, writeFileSync } from "fs";
 import { basename, dirname, resolve } from "path";
 import { estilo, ffColor, perfil } from "./lib/config.mjs";
 import { copiarFonte, ff } from "./lib/midia.mjs";
+import { resolverFonte } from "./lib/fontes.mjs";
 
 const saida = process.argv[2];
 if (!saida) {
@@ -20,7 +21,7 @@ mkdirSync(pasta, { recursive: true });
 
 // fontes copiadas para a pasta e referenciadas só pelo nome (caminho com ":" quebra o drawtext)
 const fonte = (f) => {
-  if (!f?.arquivo || !existsSync(f.arquivo)) return null;
+  resolverFonte(f);
   const nome = "f_" + basename(f.arquivo).replace(/[^A-Za-z0-9._-]/g, "");
   copiarFonte(f.arquivo, resolve(pasta, nome));
   return nome;

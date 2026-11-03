@@ -5,11 +5,12 @@
  * (já saiu "SPRINT HÁIH", "CORETOR", lorem ipsum). Aqui a grafia é exata,
  * custa zero crédito e dá para regerar quantas vezes quiser.
  *
- * Uso: node design-system/reels-flow/gerar-motion.mjs <diretorio-de-saida>
+ * Uso: node scripts/gerar-motion.mjs <diretorio-de-saida>
  * Requer: ffmpeg no PATH.
  */
 import { execFileSync } from "child_process";
-import { mkdirSync, copyFileSync, existsSync } from "fs";
+import { mkdirSync } from "fs";
+import { copiarFonte } from "./lib/midia.mjs";
 import { resolve } from "path";
 import { env, estilo, perfil, ffColor, assColor, rgb } from "./lib/config.mjs";
 
@@ -19,10 +20,7 @@ mkdirSync(SAIDA, { recursive: true });
 // O drawtext não aceita bem o "C:" do caminho da fonte (o escape de ":" quebra o
 // parser do filtergraph). Copiar a fonte para a pasta de saída e rodar o ffmpeg
 // com cwd nela resolve de vez: o filtro passa a usar só o nome do arquivo.
-const FONTE_ORIGEM = "C:/Windows/Fonts/arialbd.ttf";
-if (!existsSync(resolve(SAIDA, "fonte.ttf"))) {
-  copyFileSync(FONTE_ORIGEM, resolve(SAIDA, "fonte.ttf"));
-}
+copiarFonte(estilo.fontes.titulo.arquivo, resolve(SAIDA, "fonte.ttf"));
 
 // Design System
 const FUNDO = ffColor(estilo.cores.fundo);

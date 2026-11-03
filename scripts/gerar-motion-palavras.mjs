@@ -8,7 +8,8 @@
  *   início da peça.
  */
 import { execFileSync } from "child_process";
-import { readFileSync, mkdirSync, copyFileSync, existsSync } from "fs";
+import { readFileSync, mkdirSync } from "fs";
+import { copiarFonte } from "./lib/midia.mjs";
 import { dirname, basename, resolve } from "path";
 import { env, estilo, perfil, ffColor, assColor, rgb } from "./lib/config.mjs";
 
@@ -18,9 +19,7 @@ const DESTAQUE = destaqueArg ? Number(destaqueArg) : palavras.length - 1;
 
 const SAIDA_DIR = dirname(resolve(saidaPath));
 mkdirSync(SAIDA_DIR, { recursive: true });
-if (!existsSync(resolve(SAIDA_DIR, "fonte.ttf"))) {
-  copyFileSync("C:/Windows/Fonts/arialbd.ttf", resolve(SAIDA_DIR, "fonte.ttf"));
-}
+copiarFonte(estilo.fontes.titulo.arquivo, resolve(SAIDA_DIR, "fonte.ttf"));
 
 const FUNDO = ffColor(estilo.cores.fundo);
 const VERDE = ffColor(estilo.cores.destaque);

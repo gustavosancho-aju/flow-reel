@@ -8,7 +8,9 @@
  * Sem áudio de propósito: entra por cima do vídeo e o áudio original continua.
  */
 import { execFileSync } from "child_process";
-import { mkdirSync, copyFileSync, existsSync } from "fs";
+import { mkdirSync } from "fs";
+import { copiarFonte } from "./lib/midia.mjs";
+import { FONTE_MONO } from "./lib/fontes.mjs";
 import { dirname, basename, resolve } from "path";
 import { env, estilo, perfil, ffColor, assColor, rgb } from "./lib/config.mjs";
 
@@ -17,10 +19,10 @@ const SAIDA_DIR = dirname(resolve(saidaPath));
 mkdirSync(SAIDA_DIR, { recursive: true });
 // mono para o terminal, sans para o rótulo — copiadas para evitar o ":" do path
 for (const [origem, destino] of [
-  ["C:/Windows/Fonts/consolab.ttf", "mono.ttf"],
-  ["C:/Windows/Fonts/arialbd.ttf", "fonte.ttf"],
+  [(estilo.fontes.mono || FONTE_MONO).arquivo, "mono.ttf"],
+  [estilo.fontes.corpo.arquivo, "fonte.ttf"],
 ]) {
-  if (!existsSync(resolve(SAIDA_DIR, destino))) copyFileSync(origem, resolve(SAIDA_DIR, destino));
+  copiarFonte(origem, resolve(SAIDA_DIR, destino));
 }
 
 const BARRA = String.fromCharCode(92);

@@ -7,8 +7,12 @@ import { RAIZ } from "./lib/raiz.mjs";
 import { obterFormato } from "./lib/formato.mjs";
 import { diagnosticar } from "./diagnostico.mjs";
 import { validarPerfil } from "./validar-perfil.mjs";
+import { escolherTranscritor, transcreverArquivo, planejarCortes, filtroCortes } from "./lib/transcricao.mjs";
+import { argumentosFiltroArquivo } from "./lib/corte.mjs";
 
-export async function editarGravado(entrada, pasta, { formato, cortarSilencio = false, palavras } = {}) {
+export async function editarGravado(entrada, pasta, { formato, cortarSilencio = false, palavras, transcritor = 'auto' } = {}, { transcrever = transcreverArquivo } = {}) {
+  const { env } = await import('./lib/config.mjs');
+  const selecionado = palavras ? null : escolherTranscritor(env, transcritor);
   const requisitos = diagnosticar();
   if (!requisitos.ok) throw new Error(requisitos.itens.filter((i) => !i.ok).map((i) => `${i.nome}: ${i.detalhe}`).join("\n"));
   const perfil = validarPerfil(RAIZ, "gravado");
@@ -24,8 +28,24 @@ export async function editarGravado(entrada, pasta, { formato, cortarSilencio = 
   const projetoPath = resolve(dir, "projeto.json");
   const projeto = JSON.parse(readFileSync(projetoPath, "utf8"));
   const limpo = resolve(dir, "limpo.mp4");
-  if (cortarSilencio) node("cortar-video.mjs", resolve(dir, "base.mp4"), limpo, "ffmpeg");
+  let brutas = palavras ? JSON.parse(readFileSync(resolve(palavras), 'utf8')) : null;
+  if (selecionado) {
+    const duracaoBase = Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', resolve(dir, 'base.mp4')], { encoding: 'utf8' }));
+    brutas = await transcrever(resolve(dir, 'voz16.mp3'), duracaoBase, selecionado);
+    writeFileSync(resolve(dir, 'transcricao-original.json'), JSON.stringify(brutas, null, 2));
+    if (cortarSilencio && brutas.length) {
+      const plano = planejarCortes(brutas, duracaoBase);
+      const filtro = resolve(dir, 'cortes.ffscript');
+      writeFileSync(filtro, filtroCortes(plano.intervalos));
+      writeFileSync(resolve(dir, 'cortes.json'), JSON.stringify(plano, null, 2));
+      const ajuda = execFileSync('ffmpeg', ['-hide_banner', '-h', 'long'], { encoding: 'utf8', maxBuffer: 4 * 1024 * 1024 });
+      run('ffmpeg', ['-y', '-v', 'error', '-i', resolve(dir, 'base.mp4'), ...argumentosFiltroArquivo(filtro, ajuda), '-map', '[v]', '-map', '[a]', '-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-pix_fmt', 'yuv420p', '-c:a', 'aac', limpo]);
+      brutas = plano.palavras;
+    } else copyFileSync(resolve(dir, 'base.mp4'), limpo);
+    if (!brutas.length) console.warn('Nenhuma fala reconhecida: preservando o vídeo sem cortes por fala ou legenda.');
+  } else if (cortarSilencio) node("cortar-video.mjs", resolve(dir, "base.mp4"), limpo, "ffmpeg");
   else copyFileSync(resolve(dir, "base.mp4"), limpo);
+  if (!palavras && !selecionado && transcritor === 'auto') console.warn('Sem GROQ_API_KEY/OPENAI_API_KEY: edição local sem transcrição automática.');
   const duracao = Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", limpo], { encoding: "utf8" }));
   run("ffmpeg", ["-y", "-v", "error", "-i", limpo, "-vn", "-ac", "1", "-ar", "44100", resolve(dir, "voz-limpa.wav")]);
   node("aplicar-estilo-template.mjs", resolve(dir, "edicao/index.html"), projeto.formato, "gravado");
@@ -34,8 +54,7 @@ export async function editarGravado(entrada, pasta, { formato, cortarSilencio = 
   copyFileSync(resolve(dir, "voz-limpa.wav"), resolve(dir, "edicao/media/audio.wav"));
   writeFileSync(resolve(dir, "edicao/hyperframes.json"), JSON.stringify({ paths: { assets: "media" } }, null, 2));
   let comLegenda = false;
-  if (palavras) {
-    const brutas = JSON.parse(readFileSync(resolve(palavras), "utf8"));
+  if (palavras || brutas?.length) {
     if (!Array.isArray(brutas) || !brutas.length) throw new Error("O arquivo de palavras precisa conter uma lista não vazia de timestamps do vídeo limpo.");
     if (brutas.some((p) => p.inicio >= duracao || p.fim > duracao + 0.1)) throw new Error("Os timestamps não cabem no vídeo limpo. Transcreva novamente após os cortes.");
     const { gerarLegenda } = await import("./lib/legenda.mjs");
@@ -48,14 +67,14 @@ export async function editarGravado(entrada, pasta, { formato, cortarSilencio = 
   } else run("ffmpeg", ["-y", "-v", "error", "-i", "limpo.mp4", "-c", "copy", "-movflags", "+faststart", "final.mp4"], dir);
   run("ffmpeg", ["-y", "-v", "error", "-ss", String(Math.min(1, duracao / 2)), "-i", limpo, "-frames:v", "1", resolve(dir, "foto.jpg")]);
   node("gerar-capa.mjs", resolve(dir, "foto.jpg"), resolve(dir, "capa.jpg"), projeto.formato);
-  Object.assign(projeto, { final: resolve(dir, "final.mp4"), duracao, comLegenda, corteSilencio: cortarSilencio,
+  Object.assign(projeto, { final: resolve(dir, "final.mp4"), duracao, comLegenda, corteSilencio: cortarSilencio, transcritor: selecionado?.provedor ?? null,
     aviso: "Exportação local em 1x. O template HyperFrames é um ponto de partida: personalize seus painéis e tempos antes de renderizar motions." });
   writeFileSync(projetoPath, JSON.stringify(projeto, null, 2) + "\n");
   return projeto;
 }
 
 async function main() {
-  const ajuda = "Uso: npm run editar -- <bruto.mp4> <pasta-nova> [9:16|16:9] [--cortar-silencio] [--palavras palavras.json]\nSem API: exporta vídeo e capa e prepara o template para motions. Timestamps opcionais devem corresponder ao vídeo já cortado.";
+  const ajuda = "Uso: npm run editar -- <bruto.mp4> <pasta-nova> [9:16|16:9] [--cortar-silencio] [--palavras palavras.json] [--transcritor auto|groq|openai|nenhum]\nSem palavras fornecidas, transcreve com a chave disponível. Cortes são opcionais; palavras fornecidas correspondem ao vídeo já cortado.";
   const args = process.argv.slice(2);
   if (args.includes("--help")) { console.log(ajuda); return; }
   const [entrada, pasta, ...opcionais] = args;
@@ -66,6 +85,7 @@ async function main() {
     if (["9:16", "16:9"].includes(arg)) opcoes.formato = arg;
     else if (arg === "--cortar-silencio") opcoes.cortarSilencio = true;
     else if (arg === "--palavras" && opcionais[i + 1]) opcoes.palavras = opcionais[++i];
+    else if (arg === '--transcritor' && opcionais[i + 1]) opcoes.transcritor = opcionais[++i];
     else throw new Error(ajuda);
   }
   console.log(JSON.stringify(await editarGravado(entrada, pasta, opcoes), null, 2));

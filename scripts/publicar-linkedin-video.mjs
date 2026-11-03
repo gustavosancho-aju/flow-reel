@@ -7,13 +7,13 @@
  * (urn:li:video) causa "not owned by the author".
  *
  * NUNCA rodar sem ordem explícita do dono do perfil: publicar é público.
- * O token vem de integration_secrets (o cron de refresh o renova); fallback
- * para LINKEDIN_ACCESS_TOKEN do .env.local. Limite do LinkedIn: 5 GB / 10 min.
+ * O token vem somente de LINKEDIN_ACCESS_TOKEN no ambiente do flow-reel.
+ * Limite do LinkedIn: 5 GB / 10 min.
  *
  * Uso: node publicar-linkedin-video.mjs <video.mp4> <texto.txt> [titulo]
  */
 import { readFileSync } from "fs";
-import { env, estilo, perfil, ffColor, assColor, rgb, exigir } from "./lib/config.mjs";
+import { env, exigir } from "./lib/config.mjs";
 
 
 const [, , videoPath, textoPath, titulo = "Reel"] = process.argv;
@@ -22,26 +22,10 @@ if (!videoPath || !textoPath) {
   process.exit(1);
 }
 
-/**
- * Token do LinkedIn: LINKEDIN_ACCESS_TOKEN no .env.local. Opcional: se você guarda o
- * token renovado numa tabela "integration_secrets" do Supabase (chave
- * LINKEDIN_ACCESS_TOKEN), defina LINKEDIN_TOKEN_FROM_SUPABASE=true e ele é lido de lá.
- */
-async function token() {
-  if (env.LINKEDIN_TOKEN_FROM_SUPABASE === "true" && env.NEXT_PUBLIC_SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
-    const url = env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/+$/, "");
-    const key = env.SUPABASE_SERVICE_ROLE_KEY;
-    const r = await fetch(`${url}/rest/v1/integration_secrets?select=value&key=eq.LINKEDIN_ACCESS_TOKEN`, {
-      headers: { apikey: key, Authorization: `Bearer ${key}` },
-    });
-    const j = await r.json().catch(() => []);
-    if (j?.[0]?.value) return j[0].value;
-  }
-  return env.LINKEDIN_ACCESS_TOKEN;
-}
-
-const TOKEN = await token();
-if (!TOKEN) throw new Error("sem token do LinkedIn: defina LINKEDIN_ACCESS_TOKEN no .env.local");
+// A antiga opção LINKEDIN_TOKEN_FROM_SUPABASE foi removida. Não consulta tabelas
+// de segredos nem utiliza credencial administrativa de outro serviço.
+exigir("LINKEDIN_ACCESS_TOKEN");
+const TOKEN = env.LINKEDIN_ACCESS_TOKEN;
 const H = { Authorization: `Bearer ${TOKEN}`, "X-Restli-Protocol-Version": "2.0.0", "Content-Type": "application/json" };
 
 const info = await (await fetch("https://api.linkedin.com/v2/userinfo", { headers: H })).json();

@@ -37,7 +37,12 @@ necessário copiar fontes, vídeos, perfil, `.env` ou ferramentas da máquina do
 1. Instale Node.js **22 ou superior**, Git e uma distribuição completa de FFmpeg
    que inclua `ffprobe`, `drawtext`, `subtitles` (libass), `libx264` e AAC.
    No Windows, coloque a pasta `bin` do FFmpeg no PATH e reabra o terminal.
-   No macOS, `brew install ffmpeg`; em Debian/Ubuntu, `sudo apt install ffmpeg`.
+   No macOS, use `brew install ffmpeg-full` e execute
+   `export PATH="$(brew --prefix ffmpeg-full)/bin:$PATH"` antes de rodar os scripts;
+   acrescente esse PATH à configuração do seu terminal para mantê-lo nas próximas
+   sessões. O pacote simples pode não incluir os filtros de texto/legenda.
+   A [fórmula oficial ffmpeg-full](https://formulae.brew.sh/formula/ffmpeg-full)
+   inclui essas bibliotecas. Em Debian/Ubuntu, `sudo apt install ffmpeg`.
    Os [downloads oficiais](https://ffmpeg.org/download.html) indicam as distribuições
    disponíveis. O diagnóstico abaixo informa exatamente o que faltar.
 2. Clone e verifique as dependências (os comandos npm funcionam em PowerShell,

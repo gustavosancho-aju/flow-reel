@@ -76,6 +76,13 @@ test("diagnóstico identifica Node antigo, binários ausentes e módulos opciona
   assert.equal(r.ok, false); assert.ok(r.itens.filter((i) => !i.ok).some((i) => i.nome === "Node.js 22+"));
   assert.ok(r.itens.some((i) => i.nome === "FFmpeg" && !i.ok)); assert.match(r.opcionais, /quando usados/);
 });
+test("diagnóstico orienta ffmpeg-full quando faltam filtros no macOS", (t) => {
+  const raiz = fixture(t);
+  const r = diagnosticar({ raiz, plataforma: "darwin", versaoNode: "22.0.0", executar: (_cmd, args) => ({ status: 0,
+    stdout: args.includes("-encoders") ? "libx264 aac" : args.includes("-filters") ? "scale trim" : "version test", stderr: "" }) });
+  assert.equal(r.ok, false);
+  assert.match(r.itens.find((i) => i.nome === "Filtro subtitles").detalhe, /brew install ffmpeg-full/);
+});
 test("fontes embarcadas correspondem às origens e licenças versionadas", () => {
   const pasta = fileURLToPath(new URL("../assets/fonts/", import.meta.url));
   const origem = JSON.parse(readFileSync(join(pasta, "origem.json")));

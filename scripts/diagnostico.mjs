@@ -7,20 +7,29 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { validarPerfil } from "./validar-perfil.mjs";
 
-export function diagnosticar({ raiz = RAIZ, versaoNode = process.versions.node, executar = spawnSync, modo } = {}) {
+export function diagnosticar({ raiz = RAIZ, versaoNode = process.versions.node, executar = spawnSync, modo, plataforma = process.platform } = {}) {
   const itens = [];
+  const instalarFFmpeg = plataforma === "darwin"
+    ? "Instale brew install ffmpeg-full e coloque o diretório $(brew --prefix ffmpeg-full)/bin no PATH (veja README)."
+    : "Instale uma distribuição completa do FFmpeg no PATH, com drawtext, libass/subtitles, libx264 e AAC.";
   itens.push({ nome: "Node.js 22+", ok: Number(versaoNode.split(".")[0]) >= 22, detalhe: versaoNode });
   const rodar = (cmd, args) => {
     const r = executar(cmd, args, { encoding: "utf8", shell: false, timeout: 15000 });
     return { ok: !r.error && r.status === 0, texto: `${r.stdout ?? ""}\n${r.stderr ?? ""}` };
   };
   const ffmpeg = rodar("ffmpeg", ["-version"]), ffprobe = rodar("ffprobe", ["-version"]);
-  itens.push({ nome: "FFmpeg", ok: ffmpeg.ok, detalhe: ffmpeg.ok ? ffmpeg.texto.split("\n")[0] : "Instale FFmpeg e adicione ao PATH." });
+  itens.push({ nome: "FFmpeg", ok: ffmpeg.ok, detalhe: ffmpeg.ok ? ffmpeg.texto.split("\n")[0] : instalarFFmpeg });
   itens.push({ nome: "ffprobe", ok: ffprobe.ok, detalhe: ffprobe.ok ? ffprobe.texto.split("\n")[0] : "ffprobe deve estar no PATH junto com FFmpeg." });
   if (ffmpeg.ok) {
     const filtros = rodar("ffmpeg", ["-hide_banner", "-filters"]), encoders = rodar("ffmpeg", ["-hide_banner", "-encoders"]);
-    for (const nome of ["drawtext", "subtitles"]) itens.push({ nome: `Filtro ${nome}`, ok: filtros.ok && new RegExp(`\\b${nome}\\b`).test(filtros.texto), detalhe: "A distribuição FFmpeg precisa incluir drawtext e libass/subtitles." });
-    for (const nome of ["libx264", "aac"]) itens.push({ nome: `Encoder ${nome}`, ok: encoders.ok && new RegExp(`\\b${nome}\\b`).test(encoders.texto), detalhe: "Use uma distribuição completa do FFmpeg." });
+    for (const nome of ["drawtext", "subtitles"]) {
+      const ok = filtros.ok && new RegExp(`\\b${nome}\\b`).test(filtros.texto);
+      itens.push({ nome: `Filtro ${nome}`, ok, detalhe: ok ? "disponível" : instalarFFmpeg });
+    }
+    for (const nome of ["libx264", "aac"]) {
+      const ok = encoders.ok && new RegExp(`\\b${nome}\\b`).test(encoders.texto);
+      itens.push({ nome: `Encoder ${nome}`, ok, detalhe: ok ? "disponível" : instalarFFmpeg });
+    }
   }
   try {
     const estilo = JSON.parse(readFileSync(resolve(raiz, "perfil/estilo.exemplo.json"), "utf8"));

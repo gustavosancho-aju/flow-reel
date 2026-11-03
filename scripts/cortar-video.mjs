@@ -9,13 +9,17 @@ import { fileURLToPath } from "node:url";
 import { env } from "./lib/config.mjs";
 import { argumentosAutoEditor } from "./lib/corte.mjs";
 
-const [, , entrada, saida, motor = "ffmpeg", minArg = "0.35", margemArg = "0.12", limiarArg = "0.025"] = process.argv;
+const [, , entrada, saida, motor = "ffmpeg", minArg = "0.35", margemArg = "0.12", limiarArg] = process.argv;
 if (!entrada || !saida || !["ffmpeg", "auto-editor"].includes(motor)) {
   console.error("Uso: node scripts/cortar-video.mjs <entrada> <saida> [ffmpeg|auto-editor] [minSilencio] [margem] [limiar]");
   process.exit(1);
 }
+if (motor === "ffmpeg" && limiarArg !== undefined) {
+  console.error("O argumento limiar só é aceito pelo motor auto-editor; remova-o ao usar ffmpeg.");
+  process.exit(1);
+}
 if (resolve(entrada) === resolve(saida)) throw new Error("A saída deve ser diferente do vídeo original.");
-const [min, margem, limiar] = [minArg, margemArg, limiarArg].map(Number);
+const [min, margem, limiar] = [minArg, margemArg, limiarArg ?? "0.025"].map(Number);
 // Valida também os parâmetros repassados ao motor legado.
 const autoArgs = argumentosAutoEditor(resolve(entrada), resolve(saida), min, margem, limiar);
 const comando = motor === "auto-editor" ? (env.AUTO_EDITOR_PATH || "auto-editor") : process.execPath;

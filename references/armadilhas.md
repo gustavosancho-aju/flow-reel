@@ -152,10 +152,20 @@ descobrir. Ler antes de debugar do zero.
 
 ## Supabase Storage / Instagram Graph API
 
-- **O bucket `post-images` só aceita `image/png|jpeg|webp`** — vídeo tem que
-  ir para `post-videos` (`video/mp4|quicktime`). Confirmar as duas URLs
-  públicas respondem 200 antes de criar o container do Reel; um link que não
-  carrega quebra a criação silenciosamente (erro genérico da Graph API).
+- **Use o bucket privado dedicado `flow-reel-media`** para vídeo e capa:
+  `video/mp4`, `image/jpeg`, `image/png` e `image/webp`. Configure as políticas em
+  `references/supabase-storage.sql` com o ID do usuário dedicado. Use chave
+  publishable/anon e a sessão desse usuário, sujeitos a RLS; nunca uma chave admin.
+- **O login é renovado antes de cada upload.** Configure o refresh token inicial em
+  `SUPABASE_STORAGE_REFRESH_TOKEN`. O script salva o token rotacionado em
+  `.supabase-session.json` na raiz do flow-reel, fora do Git, e usa esse cache nos
+  próximos uploads. Não execute duas renovações simultâneas da mesma sessão; o
+  bloqueio local retorna erro para evitar reutilizar um refresh token.
+- **Envie URLs assinadas, não o caminho público do Storage.** Confirme que as URLs
+  de vídeo e capa respondem 200 sem headers de autenticação antes de criar o
+  container. Gere-as perto da publicação, com validade suficiente para todo o
+  download/processamento; link expirado costuma resultar em erro genérico da Graph
+  API. A expiração da URL não apaga o objeto. Use nomes únicos, sem sobrescrita.
 - **O `publishReels` de referência costuma esperar 10s fixos** antes de
   publicar — no fluxo real o processamento levou até 25s. Sempre fazer
   polling do `status_code` do container até `FINISHED`, nunca um `sleep`

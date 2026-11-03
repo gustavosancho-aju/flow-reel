@@ -8,12 +8,12 @@
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { env } from "./lib/config.mjs";
+import { claimsToken, renovarSessao, usuarioToken } from "./lib/supabase-auth.mjs";
 
 export function configurarUpload(config, bucketArg) {
   const url = config.SUPABASE_URL || config.NEXT_PUBLIC_SUPABASE_URL;
   for (const [nome, valor] of Object.entries({ SUPABASE_URL: url,
-    SUPABASE_PUBLISHABLE_KEY: config.SUPABASE_PUBLISHABLE_KEY,
-    SUPABASE_STORAGE_ACCESS_TOKEN: config.SUPABASE_STORAGE_ACCESS_TOKEN })) {
+    SUPABASE_PUBLISHABLE_KEY: config.SUPABASE_PUBLISHABLE_KEY })) {
     if (!valor) throw new Error(`Falta ${nome} (veja .env.exemplo).`);
   }
   const base = new URL(url);
@@ -23,19 +23,12 @@ export function configurarUpload(config, bucketArg) {
   if (base.username || base.password || base.search || base.hash || base.pathname !== "/") {
     throw new Error("SUPABASE_URL deve conter somente a origem do projeto.");
   }
-  const claims = (token) => {
-    try { return JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString("utf8")); }
-    catch { return {}; }
-  };
   const key = config.SUPABASE_PUBLISHABLE_KEY;
-  if (!key.startsWith("sb_publishable_") && claims(key).role !== "anon") {
+  if (!key.startsWith("sb_publishable_") && claimsToken(key).role !== "anon") {
     throw new Error("Use uma chave publishable (ou anon legada), sem privilégios administrativos.");
   }
   const token = config.SUPABASE_STORAGE_ACCESS_TOKEN;
-  const usuario = claims(token);
-  if (usuario.role !== "authenticated" || !usuario.sub) {
-    throw new Error("SUPABASE_STORAGE_ACCESS_TOKEN deve ser o JWT de um usuário dedicado autenticado, limitado por RLS.");
-  }
+  if (token) usuarioToken(token);
   const bucket = config.SUPABASE_STORAGE_BUCKET || "flow-reel-media";
   if (!/^[a-z0-9][a-z0-9-]*$/.test(bucket) || (bucketArg && bucketArg !== bucket)) {
     throw new Error("Use somente o bucket dedicado configurado em SUPABASE_STORAGE_BUCKET.");
@@ -47,8 +40,9 @@ export function configurarUpload(config, bucketArg) {
   return { base: base.origin, bucket, expiresIn, key, token };
 }
 
-export async function uploadSupabase(arquivo, destino, mime, config = env, bucketArg, request = fetch) {
-  const { base, bucket, expiresIn, key, token } = configurarUpload(config, bucketArg);
+export async function uploadSupabase(arquivo, destino, mime, config = env, bucketArg, request = fetch, sessaoOpcoes) {
+  const conexao = configurarUpload(config, bucketArg);
+  const { base, bucket, expiresIn, key } = conexao;
   const partes = destino.replace(/^\/+/, "").split("/");
   if (partes.some((p) => !p || p === "." || p === ".." || /[\\\x00-\x1f]/.test(p))) {
     throw new Error("Caminho de destino inválido.");
@@ -56,16 +50,18 @@ export async function uploadSupabase(arquivo, destino, mime, config = env, bucke
   if (!["video/mp4", "image/jpeg", "image/png", "image/webp"].includes(mime)) {
     throw new Error("MIME não permitido: use video/mp4, image/jpeg, image/png ou image/webp.");
   }
+  const corpo = readFileSync(arquivo);
+  const token = await renovarSessao(conexao, config, request, sessaoOpcoes);
   const caminho = `${bucket}/${partes.map(encodeURIComponent).join("/")}`;
   const headers = { apikey: key, Authorization: `Bearer ${token}` };
   const envio = await request(`${base}/storage/v1/object/${caminho}`, {
     method: "POST", headers: { ...headers, "Content-Type": mime, "x-upsert": "false" },
-    body: readFileSync(arquivo),
+    body: corpo, redirect: "error",
   });
   // Não ecoa corpo de erro remoto: ele pode conter credenciais ou URLs assinadas.
   if (!envio.ok) throw new Error(`Upload falhou (HTTP ${envio.status}). Confira bucket, RLS, token e nome único do arquivo.`);
   const assinatura = await request(`${base}/storage/v1/object/sign/${caminho}`, {
-    method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ expiresIn }),
+    method: "POST", redirect: "error", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ expiresIn }),
   });
   if (!assinatura.ok) throw new Error(`URL assinada falhou (HTTP ${assinatura.status}). Confira a política SELECT do bucket.`);
   const { signedURL } = await assinatura.json();

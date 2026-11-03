@@ -4,14 +4,17 @@ import { mkdtempSync, mkdirSync, writeFileSync, copyFileSync, rmSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { configurarUpload, uploadSupabase } from "../scripts/upload-supabase.mjs";
 
-const jwt = (role) => `e30.${Buffer.from(JSON.stringify({ role, sub: "upload-user" })).toString("base64url")}.fixture`;
+const futuro = Math.floor(Date.now() / 1000) + 3600;
+const jwt = (role) => `e30.${Buffer.from(JSON.stringify({ role, sub: "upload-user", exp: futuro })).toString("base64url")}.fixture`;
 const config = { SUPABASE_URL: "https://example.supabase.co", SUPABASE_PUBLISHABLE_KEY: "sb_publishable_fixture",
-  SUPABASE_STORAGE_ACCESS_TOKEN: jwt("authenticated") };
+  SUPABASE_STORAGE_ACCESS_TOKEN: jwt("authenticated"), SUPABASE_STORAGE_REFRESH_TOKEN: "refresh-inicial" };
 const temp = (t) => {
-  const dir = mkdtempSync(join(tmpdir(), "flow-security-test-"));
+  const temporarios = fileURLToPath(new URL("../test-output/", import.meta.url));
+  mkdirSync(temporarios, { recursive: true });
+  const dir = mkdtempSync(join(temporarios, "flow-security-test-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   return dir;
 };
@@ -26,26 +29,31 @@ test("upload rejeita chaves administrativas, JWT privilegiado e bucket diferente
 });
 test("upload usa INSERT sem upsert, codifica caminho e devolve URL assinada", async (t) => {
   const arquivo = join(temp(t), "video.mp4"); writeFileSync(arquivo, "fixture");
+  const arquivoSessao = join(temp(t), "sessao.json");
   const chamadas = [];
   const request = async (url, options) => {
     chamadas.push({ url, options });
+    if (url.includes("/auth/v1/")) return { ok: true, json: async () => ({ access_token: jwt("authenticated"), refresh_token: "refresh-rotacionado", user: { id: "upload-user" } }) };
     return { ok: true, json: async () => ({ signedURL: "/object/sign/flow-reel-media/reels/v.mp4?token=fixture" }) };
   };
-  const url = await uploadSupabase(arquivo, "reels/visita á.mp4", "video/mp4", config, undefined, request);
-  assert.equal(chamadas.length, 2);
-  assert.match(chamadas[0].url, /visita%20%C3%A1.mp4$/);
-  assert.equal(chamadas[0].options.headers["x-upsert"], "false");
-  assert.equal(chamadas[0].options.headers.Authorization, `Bearer ${config.SUPABASE_STORAGE_ACCESS_TOKEN}`);
-  assert.deepEqual(JSON.parse(chamadas[1].options.body), { expiresIn: 21600 });
+  const url = await uploadSupabase(arquivo, "reels/visita á.mp4", "video/mp4", config, undefined, request, { arquivoSessao });
+  assert.equal(chamadas.length, 3);
+  assert.ok(chamadas[0].url.endsWith("/auth/v1/token?grant_type=refresh_token"));
+  assert.match(chamadas[1].url, /visita%20%C3%A1.mp4$/);
+  assert.equal(chamadas[1].options.headers["x-upsert"], "false");
+  assert.equal(chamadas[1].options.headers.Authorization, `Bearer ${config.SUPABASE_STORAGE_ACCESS_TOKEN}`);
+  assert.deepEqual(JSON.parse(chamadas[2].options.body), { expiresIn: 21600 });
   assert.equal(url, "https://example.supabase.co/storage/v1/object/sign/flow-reel-media/reels/v.mp4?token=fixture");
 });
 test("erro de upload não assina URL nem expõe resposta remota", async (t) => {
   const arquivo = join(temp(t), "v.mp4"); writeFileSync(arquivo, "fixture");
   let chamadas = 0;
-  await assert.rejects(uploadSupabase(arquivo, "v.mp4", "video/mp4", config, undefined, async () => {
-    chamadas++; return { ok: false, status: 403, text: async () => "SEGREDO" };
-  }), (err) => /HTTP 403/.test(err.message) && !err.message.includes("SEGREDO"));
-  assert.equal(chamadas, 1);
+  await assert.rejects(uploadSupabase(arquivo, "v.mp4", "video/mp4", config, undefined, async (url) => {
+    chamadas++;
+    if (url.includes("/auth/v1/")) return { ok: true, json: async () => ({ access_token: jwt("authenticated"), refresh_token: "rotacionado", user: { id: "upload-user" } }) };
+    return { ok: false, status: 403, text: async () => "SEGREDO" };
+  }, { arquivoSessao: join(temp(t), "sessao.json") }), (err) => /HTTP 403/.test(err.message) && !err.message.includes("SEGREDO"));
+  assert.equal(chamadas, 2);
 });
 test("rejeita traversal antes de enviar mídia", async () => {
   await assert.rejects(uploadSupabase("ausente.mp4", "../escape.mp4", "video/mp4", config), /Caminho/);

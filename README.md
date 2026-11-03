@@ -175,6 +175,8 @@ node scripts/cortar-video.mjs base.mp4 sem_silencio.mp4 auto-editor 0.35 0.12 0.
 
 Argumentos do seletor: entrada, saída, motor, silêncio mínimo (segundos), margem
 (segundos) e limiar de áudio (só auto-editor; entre 0 e 1, exclusivo em 0).
+Passar um limiar com o motor `ffmpeg` causa erro, mesmo que seja o valor padrão;
+esse parâmetro não é silenciosamente ignorado.
 O motor alternativo usa áudio, margem e suavização para cortar imagem e som juntos,
 sem mudar as dimensões. Os detectores são diferentes: revise os cortes e ajuste os
 valores. Nenhum dos dois identifica repetições de fala automaticamente.
@@ -207,7 +209,8 @@ na mesma linha. Não cole credenciais na conversa.
 | `AUTO_EDITOR_PATH` | Caminho do executável, sem aspas internas/argumentos; vazio usa o PATH |
 | `SUPABASE_URL` | Origem HTTPS do projeto; aceita `NEXT_PUBLIC_SUPABASE_URL` como alternativa legada |
 | `SUPABASE_PUBLISHABLE_KEY` | Chave publishable; aceita anon legada. Chaves administrativas são rejeitadas |
-| `SUPABASE_STORAGE_ACCESS_TOKEN` | JWT de acesso do usuário dedicado, papel `authenticated`, com RLS |
+| `SUPABASE_STORAGE_REFRESH_TOKEN` | Refresh token inicial do usuário dedicado; renova o login antes de cada upload |
+| `SUPABASE_STORAGE_ACCESS_TOKEN` | Opcional: JWT inicial para conferir a identidade esperada; o upload usa o JWT renovado |
 | `SUPABASE_STORAGE_BUCKET` | Bucket privado dedicado; padrão `flow-reel-media` |
 | `SUPABASE_SIGNED_URL_TTL` | Validade da URL em segundos: padrão 21600 (6h), intervalo 300 a 604800 |
 
@@ -222,9 +225,10 @@ necessárias para os módulos escolhidos.
 com **publishable + JWT de um usuário dedicado + RLS**; a chave publishable sozinha
 não é uma credencial privada limitada a um bucket.
 
-1. Crie um usuário dedicado no Supabase Auth e obtenha o JWT de acesso da sessão
-   dele. Renove esse JWT por uma sessão Auth quando expirar; o script não faz login
-   nem guarda senha ou refresh token.
+1. Crie um usuário dedicado no Supabase Auth e obtenha o refresh token da sessão
+   dele. Configure-o em `SUPABASE_STORAGE_REFRESH_TOKEN`; o JWT inicial é opcional,
+   para conferir a identidade esperada. O script renova a sessão antes de cada upload,
+   inclusive quando o JWT anterior expirou, sem guardar senha e sem chave admin.
 2. Abra [references/supabase-storage.sql](references/supabase-storage.sql), substitua
    os UUIDs zerados pelo ID desse usuário e execute no SQL Editor. O SQL cria um
    bucket **privado** com MIME de vídeo/capa e permite somente INSERT e SELECT
@@ -234,6 +238,16 @@ não é uma credencial privada limitada a um bucket.
    antiga desse arquivo. Se escolher outro nome de bucket, ajuste o SQL e a variável
    juntos. O script recusa um argumento de bucket diferente do configurado.
 4. Use destinos únicos: o upload não sobrescreve arquivos e não exige UPDATE/DELETE.
+
+O refresh token rotacionado fica em `.supabase-session.json` na raiz do flow-reel,
+fora do Git; esse cache tem prioridade sobre o token inicial do `.env.local`.
+A gravação é atômica e acontece antes de enviar a mídia, portanto uma falha de
+upload não perde a sessão renovada. Há um bloqueio para impedir duas renovações
+simultâneas: se outro upload estiver renovando, aguarde e tente de novo.
+Se o login for revogado, faça novo login, atualize o refresh token inicial e remova
+o cache local. Ao trocar de projeto/usuário, remova o cache e atualize também o JWT
+opcional. Se um processo for encerrado à força durante a renovação, confira se ele
+parou antes de remover o arquivo `.supabase-session.json.lock` restante.
 
 ```bash
 node scripts/upload-supabase.mjs final.mp4 reels/visita-20261102-a.mp4 video/mp4
@@ -261,7 +275,22 @@ simuladas, sem instalar dependências nem consumir APIs. Cobrem validação de p
 agrupamento, sobreposições, supressão sob motion, formatos e arredondamento de tempos;
 além da seleção de corte e das restrições de upload/configuração.
 
+Para exercitar o upload de arquivos reais sem credenciais nem publicação, use uma
+pasta de relatório nova em cada execução:
+
+```bash
+node tests/e2e-upload-local.mjs final.mp4 capa.jpg test-output/upload-local-1
+```
+
+O teste sobe um servidor HTTP apenas em localhost, simula Auth/Storage, verifica
+duas renovações consecutivas com refresh token rotacionado e compara o SHA-256 de
+vídeo/capa baixados pelas URLs assinadas. Isso testa o cliente com arquivos reais;
+não valida as políticas RLS de um projeto Supabase remoto.
+
 Licença [MIT](LICENSE).
+
+O LinkedIn lê somente `LINKEDIN_ACCESS_TOKEN`. O antigo modo
+`LINKEDIN_TOKEN_FROM_SUPABASE` foi retirado; o script não consulta tabelas de segredos.
 
 ## Estrutura
 

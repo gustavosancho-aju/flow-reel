@@ -507,8 +507,10 @@ Siga `perfil.publicacao`.
   node scripts/publicar-instagram.mjs <video_url> <capa_url> legenda.txt
   ```
   O upload usa um bucket privado dedicado e imprime a URL assinada temporária.
-  Configure `references/supabase-storage.sql`, a chave publishable e o JWT de um
-  usuário dedicado limitado por RLS (veja `.env.exemplo`). Nomes de destino devem
+  Configure `references/supabase-storage.sql`, a chave publishable e o refresh token
+  inicial do usuário dedicado limitado por RLS (veja `.env.exemplo`). A sessão é
+  renovada antes do upload; o refresh token rotacionado fica em `.supabase-session.json`,
+  fora do Git. Nomes de destino devem
   ser únicos: não há sobrescrita. A URL deve continuar válida até a API terminar
   de baixar/processar vídeo e capa; gere-a perto da publicação, não ao agendar.
   Nunca use chave administrativa. Expirar a URL não remove o arquivo do bucket;

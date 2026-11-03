@@ -1,6 +1,8 @@
 # Dados da pessoa e chaves: nunca vão para o repositório
 .env
 .env.local
+.supabase-session*
+/test-output/
 perfil/perfil.json
 perfil/estilo.json
 perfil/referencias/
